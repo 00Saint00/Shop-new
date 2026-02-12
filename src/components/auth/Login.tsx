@@ -54,6 +54,11 @@ const Login = ({ onLogin, serverError }: LoginProps) => {
             )}
           </button>
         </div>
+
+        {serverError && (
+          <p className="text-red-500 text-sm mb-2">{serverError}</p>
+        )}
+
         <Button
           type="submit"
           disabled={isSubmitting}
