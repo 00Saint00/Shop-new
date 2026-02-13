@@ -27,6 +27,7 @@ import { logout } from "@/store/slice/authSlice";
 
 const Header = () => {
   const [count, setCount] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -100,12 +101,21 @@ const Header = () => {
           </div>
 
           {user ? (
-            <DropdownMenu>
+            <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
               <DropdownMenuTrigger asChild>
-                <div className="cursor-pointer">
+                <div className="flex items-center gap-1 focus:outline-none cursor-pointer">
                   {/* <CircleUser className="h-[24px] w-[24px]" /> */}
-                  <img src={userProfile?.avatar} alt="Avatar"   className="h-[40px] w-[40x] rounded-full object-cover" />
+                  <img src={userProfile?.avatar ?? ""} alt="Avatar"   className="h-[40px] w-[40x] rounded-full object-cover" />
+
+
+                  <ChevronUp
+                      className={`h-4 w-4 text-gray-500 transition-transform duration-400 ease-out ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
                 </div>
+
+            
               </DropdownMenuTrigger>
 
               <DropdownMenuContent className="w-48">
