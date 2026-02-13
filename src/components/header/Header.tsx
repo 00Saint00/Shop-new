@@ -5,9 +5,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import reactLogo from "../../assets/react.svg";
-import viteLogo from "/vite.svg";
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import Logo from "../../assets/logo/SHOP.CO.svg";
 import {
@@ -21,21 +18,48 @@ import {
   X,
   ShoppingCart,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState } from "@/store/Store";
+import { setUser } from "@/store/slice/authSlice";
+import { logout } from "@/store/slice/authSlice";
 
 const Header = () => {
   const [count, setCount] = useState(0);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const user = useSelector((state: RootState) => state.auth.user);
+  const userProfile = useSelector((state: RootState) => state.auth.profile);
+
+  // useEffect(() => {
+  //   supabase.auth.getUser().then(({ data }) => {
+  //     if (data.user) {
+  //       dispatch(setUser(data.user));
+  //     }
+  //   });
+  // }, []);
+
+  const handleLogout = () => {
+    supabase.auth.signOut().then(() => {
+      dispatch(logout());
+      navigate("/auth");
+    });
+  }
 
   return (
     <header className="flex justify-between items-center lg:px-[100px] px-[16px] bg-white shadow-sm relative z-50">
       <div className="flex justify-between items-center w-full lg:py-[24px] py-[12px]">
         {/* Logo */}
-        <img
-          src={Logo}
-          alt="Logo"
-          className="h-[22px] w-[140px]"
-          loading="eager"
-        />
-
+        <Link to="/">
+          <img
+            src={Logo}
+            alt="Logo"
+            className="h-[22px] w-[140px]"
+            loading="eager"
+          />
+        </Link>
         <nav className="hidden sm:flex items-center gap-[24px] ml-[40px]">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -75,45 +99,57 @@ const Header = () => {
             <ShoppingCart className="h-[24px] w-[24px]" />
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="cursor-pointer">
+                  {/* <CircleUser className="h-[24px] w-[24px]" /> */}
+                  <img src={userProfile?.avatar} alt="Avatar"   className="h-[40px] w-[40x] rounded-full object-cover" />
+                </div>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent className="w-48">
+                <DropdownMenuItem asChild>
+                  <div className=" px-3 py-2 border-b">
+                    <div className="inline-block">
+                      <p className="text-sm font-medium ">
+                        {userProfile?.full_name.toUpperCase
+                        ()}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-2">{userProfile?.email}</p>
+                    </div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <div className="flex">
+                    <User className="h-[16px] w-[16px] mr-2" />
+                    <p>My Profile</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <div className="flex">
+                    <ClipboardCheck className="h-4 w-4 mr-2" />
+                    <p>Dashboard</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <div className="flex" onClick={handleLogout}>
+                    <Clipboard className="h-4 w-4 mr-2 text-red-600" />
+                    <p className="text-sm text-red-600 cursor-pointer" >Logout</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div>
               <Link
                 to="/auth"
                 className="flex items-center gap-2 px-2 py-1 hover:text-blue-600"
               >
                 <CircleUser className="h-[24px] w-[24px]" />
               </Link>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent className="w-48">
-              <DropdownMenuItem asChild>
-                <div className=" px-3 py-2 border-b">
-                  <div className="inline-block">
-                    <p className="text-sm font-medium">Saint Phillips</p>
-                    <p className="text-xs text-gray-500">saint@gmail.com</p>
-                  </div>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <div className="flex">
-                  <User className="h-[16px] w-[16px] mr-2" />
-                  <p>My Profile</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <div className="flex">
-                  <ClipboardCheck className="h-4 w-4 mr-2" />
-                  <p>Dashboard</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <div className="flex">
-                  <Clipboard className="h-4 w-4 mr-2 text-red-600" />
-                  <p className="text-sm text-red-600">Logout</p>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+          )}
         </div>
       </div>
     </header>

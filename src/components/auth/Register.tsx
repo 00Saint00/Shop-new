@@ -51,7 +51,7 @@ const Register = ({ onSubmit, serverError }: registerProps) => {
           <label className="block text-sm font-medium mb-1">Avatar</label>
           <input
             type="file"
-            placeholder="Enter image URL"
+            placeholder="Choose a File"
             {...register("avatarFile")}
             className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black "
           />

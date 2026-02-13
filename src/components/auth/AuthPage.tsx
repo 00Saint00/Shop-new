@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { data } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 type ServerError = {
   message: string;
@@ -14,6 +15,8 @@ type ServerError = {
 const AuthPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [serverError, setServerError] = useState<ServerError | null>(null);
+const navigate = useNavigate();
+
 
   useEffect(() => {
     const getUser = async () => {
@@ -38,6 +41,7 @@ const AuthPage = () => {
         password,
       });
       if (error) throw error;
+      navigate("/");
       console.log("User logged in:", data.user?.email, data.user);
     } catch (error: any) {
       setServerError({ message: error.message });
@@ -58,19 +62,6 @@ const AuthPage = () => {
 
       const user = authData.user;
       if (!user) return;
-
-      // const file = avatarFile[0];
-      // const filePath = `avatars/${user.id}-${file.name}`;
-      // await supabase.storage.from("avatars").upload(filePath, file);
-
-      // await supabase.storage
-      //   .from("avatars")
-      //   .upload(`${user.id}-${file.name}`, file);
-
-      // const { data: urlData } = supabase.storage
-      //   .from("avatars")
-      //   .getPublicUrl(`${user.id}-${file.name}`);
-      // const avatarUrl = urlData.publicUrl;
 
       let avatarUrl = null;
       if (avatarFile?.length > 0) {
@@ -105,7 +96,7 @@ const AuthPage = () => {
     <div className="px-[16px] lg:px-[100px] pt-[80px] pb-[50%] md:pb-[25%] lg:pb-[168px]">
       <div className="w-full max-w-md mx-auto">
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="flex border-b border-gray-300 justify-between w-100 ">
+          <TabsList className="flex border-b border-gray-300 justify-between w-full">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>

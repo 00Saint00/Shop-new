@@ -1,19 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./index.css";
 import SplashScreen from "./components/splashScreen/SplashScreen";
 import Header from "./components/header/Header";
 import { AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthPage from "./components/auth/AuthPage";
+import AuthRoute from "./utils/AuthRoute";
+import HomePage from "./components/home/HomePage";
+import Footer from "./components/footer/Footer";
+import { useDispatch } from "react-redux";
+import { setUser, setProfile, logout, setAuthReady } from "@/store/slice/authSlice";
+import { supabase } from "@/lib/supabase";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const syncAuth = async (user: { id: string } | null) => {
+      if (!user) {
+        dispatch(logout());
+      } else {
+        dispatch(setUser(user));
+        const { data: profile } = await supabase
+          .from("users")
+          .select("full_name, email, avatar")
+          .eq("id", user.id)
+          .single();
+        dispatch(setProfile(profile ?? null));
+      }
+      dispatch(setAuthReady(true));
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncAuth(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncAuth(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [dispatch]);
 
   if (showSplash) {
     return (
@@ -61,8 +92,14 @@ function App() {
           <Header />
         </AnimatePresence>
         <Routes>
-          <Route path="/auth" element={<AuthPage />} />
+          {/* Public route: redirects logged-in users to home */}
+          <Route element={<AuthRoute type="public" />}>
+            <Route path="/auth" element={<AuthPage />} />
+          </Route>
+          <Route path="/" element={<HomePage />} />
         </Routes>
+
+        <Footer />
       </Router>
     </>
   );
