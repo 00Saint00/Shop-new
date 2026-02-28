@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 
 interface registerProps {
@@ -13,59 +13,22 @@ interface registerFormData {
   email: string;
   password: string;
   confirmPassword: string;
-  avatarFile: FileList;
 }
 
 const Register = ({ onSubmit, serverError }: registerProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     getValues,
-    watch,
   } = useForm<registerFormData>();
-
-  const avatarFile = watch("avatarFile");
-
-  useEffect(() => {
-    if (avatarFile && avatarFile.length > 0) {
-      const file = avatarFile[0]; // grab the actual File
-      const previewUrl = URL.createObjectURL(file); // create a temporary URL
-      setAvatarPreview(previewUrl);
-
-      // cleanup on unmount
-      return () => URL.revokeObjectURL(previewUrl);
-    } else {
-      setAvatarPreview(null);
-    }
-  }, [avatarFile]);
 
   return (
     <div className="flex flex-col gap-6 mt-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Avatar</label>
-          <input
-            type="file"
-            placeholder="Choose a File"
-            {...register("avatarFile")}
-            className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black "
-          />
-          <div className="mt-2">
-            {avatarPreview && (
-              <img
-                src={avatarPreview}
-                alt="Avatar Preview"
-                className="w-24 h-24 rounded-full object-cover"
-              />
-            )}
-          </div>
-        </div>
-
         <div>
           <label className="block text-sm font-medium mb-1">Name</label>
           <input

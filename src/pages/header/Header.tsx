@@ -47,7 +47,7 @@ const Header = () => {
       dispatch(logout());
       navigate("/auth");
     });
-  }
+  };
 
   return (
     <header className="flex justify-between items-center lg:px-[100px] px-[16px] bg-white shadow-sm relative z-50">
@@ -64,7 +64,7 @@ const Header = () => {
         <nav className="hidden sm:flex items-center gap-[24px] ml-[40px]">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 px-2 py-1 hover:text-blue-600">
+              <button className="flex items-center gap-2 px-2 py-1 hover:text-gray-800 cursor-pointer transition-colors">
                 Shop
                 <ChevronDown className="h-4 w-4" />
               </button>
@@ -105,17 +105,33 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-1 focus:outline-none cursor-pointer">
                   {/* <CircleUser className="h-[24px] w-[24px]" /> */}
-                  <img src={userProfile?.avatar ?? ""} alt="Avatar"   className="h-[40px] w-[40x] rounded-full object-cover" />
 
+                  {userProfile?.avatar ? (
+                    <img
+                      src={
+                        userProfile?.avatar ?? (
+                          <CircleUser className="h-[24px] w-[24px]" />
+                        )
+                      }
+                      alt="Avatar"
+                      className="h-[40px] w-[40x] rounded-full object-cover"
+                    />
+                  ) : (
+                    <CircleUser className="h-[24px] w-[24px]" />
+                  )}
+
+                  {/* <img
+                    src={userProfile?.avatar ?? <CircleUser className="h-[24px] w-[24px]" />}
+                    alt="Avatar"
+                    className="h-[40px] w-[40x] rounded-full object-cover"
+                  /> */}
 
                   <ChevronUp
-                      className={`h-4 w-4 text-gray-500 transition-transform duration-400 ease-out ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
-                    />
+                    className={`h-4 w-4 text-gray-500 transition-transform duration-400 ease-out ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </div>
-
-            
               </DropdownMenuTrigger>
 
               <DropdownMenuContent className="w-48">
@@ -123,18 +139,19 @@ const Header = () => {
                   <div className=" px-3 py-2 border-b">
                     <div className="inline-block">
                       <p className="text-sm font-medium ">
-                        {userProfile?.full_name.toUpperCase
-                        ()}
+                        {userProfile?.full_name.toUpperCase()}
                       </p>
-                      <p className="text-xs text-gray-500 mt-2">{userProfile?.email}</p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {userProfile?.email}
+                      </p>
                     </div>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <div className="flex">
+                  <Link to="/profile" className="flex cursor-pointer">
                     <User className="h-[16px] w-[16px] mr-2" />
                     <p>My Profile</p>
-                  </div>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <div className="flex">
@@ -145,7 +162,9 @@ const Header = () => {
                 <DropdownMenuItem asChild>
                   <div className="flex" onClick={handleLogout}>
                     <Clipboard className="h-4 w-4 mr-2 text-red-600" />
-                    <p className="text-sm text-red-600 cursor-pointer" >Logout</p>
+                    <p className="text-sm text-red-600 cursor-pointer">
+                      Logout
+                    </p>
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>

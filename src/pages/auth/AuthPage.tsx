@@ -4,8 +4,7 @@ import Login from "./Login";
 import Register from "./Register";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
-import { data } from "react-router-dom";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 type ServerError = {
@@ -15,8 +14,7 @@ type ServerError = {
 const AuthPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [serverError, setServerError] = useState<ServerError | null>(null);
-const navigate = useNavigate();
-
+  const navigate = useNavigate();
 
   useEffect(() => {
     const getUser = async () => {
@@ -50,45 +48,45 @@ const navigate = useNavigate();
 
   const handleRegister = async (data: any) => {
     try {
-      const { fullName, email, password, avatarFile } = data;
+      const { fullName, email, password } = data;
 
-      // 1️⃣ Sign up user
+      // Sign up user with metadata; database trigger creates user and customer records
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
       });
 
       if (authError) throw authError;
 
       const user = authData.user;
-      if (!user) return;
-
-      let avatarUrl = null;
-      if (avatarFile?.length > 0) {
-        const file = avatarFile[0];
-        const filePath = `${user.id}-${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, file);
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(filePath);
-        avatarUrl = urlData.publicUrl;
+      if (!user) {
+        throw new Error("User creation failed");
       }
 
-      // 3️⃣ Insert profile
-      await supabase.from("users").insert({
-        id: user.id,
-        full_name: fullName,
-        avatar: avatarUrl,
-        email: email,
-      });
+      // Explicitly update public.users (trigger already created the row; ensure profile data is set)
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({
+          full_name: fullName,
+          email,
+        })
+        .eq("id", user.id);
 
-      toast.success("Registration successful!");
+      if (updateError) {
+        console.error("Failed to update user profile:", updateError);
+        // Don't block registration - trigger may have already set these
+      }
+
+      navigate("/auth/check-email", { state: { email } });
     } catch (error: any) {
+      console.error("Registration error:", error);
       setServerError({ message: error.message });
+      toast.error(error.message || "Registration failed");
     }
   };
 

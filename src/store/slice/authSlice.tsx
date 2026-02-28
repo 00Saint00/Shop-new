@@ -1,9 +1,17 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 export type Profile = {
+  id: string;
   full_name: string;
   email: string;
   avatar: string | null;
+  role?: string | null;
+  phone: string | null;
+  address: string | null;
+  store_name: string | null;
+  contact_number: string | null;
+  status: string | null;
+  approved?: boolean | null;
 } | null;
 
 const initialState = {
@@ -41,5 +49,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { login, logout, setUser, setProfile, setAuthReady } = authSlice.actions;
+export const { login, logout, setUser, setProfile, setAuthReady } =
+  authSlice.actions;
 export default authSlice.reducer;

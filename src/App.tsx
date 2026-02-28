@@ -1,34 +1,86 @@
 import { useState, useEffect } from "react";
 import "./index.css";
 import SplashScreen from "./components/splashScreen/SplashScreen";
-import Header from "./components/header/Header";
+import Header from "./pages/header/Header";
 import { AnimatePresence } from "framer-motion";
-import { Toaster } from "react-hot-toast";
+// import { Toaster } from "react-hot-toast";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AuthPage from "./components/auth/AuthPage";
+import AuthPage from "./pages/auth/AuthPage";
+import CheckEmailPage from "./pages/auth/CheckEmailPage";
 import AuthRoute from "./utils/AuthRoute";
-import HomePage from "./components/home/HomePage";
+import HomePage from "./pages/home/HomePage";
 import Footer from "./components/footer/Footer";
 import { useDispatch } from "react-redux";
-import { setUser, setProfile, logout, setAuthReady } from "@/store/slice/authSlice";
+import {
+  setUser,
+  setProfile,
+  logout,
+  setAuthReady,
+} from "@/store/slice/authSlice";
 import { supabase } from "@/lib/supabase";
+import { Toaster } from "./components/ui/sonner";
+import Profile from "./pages/profile/Profile";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const syncAuth = async (user: { id: string } | null) => {
+    const syncAuth = async (user: { id: string; email_confirmed_at?: string | null } | null) => {
       if (!user) {
         dispatch(logout());
       } else {
         dispatch(setUser(user));
-        const { data: profile } = await supabase
+        
+        // Check if email is verified and update approved status if needed
+        // The database trigger should handle this, but we check here as a backup
+        if (user.email_confirmed_at) {
+          const { data: userCheck } = await supabase
+            .from("users")
+            .select("approved")
+            .eq("id", user.id)
+            .single();
+          
+          // If email is verified but user is not approved, trigger the update
+          // (This is a backup - the database trigger should handle it automatically)
+          if (userCheck && !userCheck.approved) {
+            await supabase
+              .from("users")
+              .update({ approved: true })
+              .eq("id", user.id);
+          }
+        }
+        
+        // Load user profile data
+        const { data: userRow } = await supabase
           .from("users")
-          .select("full_name, email, avatar")
+          .select("id, full_name, email, avatar, approved")
           .eq("id", user.id)
           .single();
-        dispatch(setProfile(profile ?? null));
+        // customers table: no approved column (removed); we only use phone, address
+        const { data: customerRow } = await supabase
+          .from("customers")
+          .select("phone, address")
+          .eq("id", user.id)
+          .maybeSingle();
+        const { data: sellerRow } = await supabase
+          .from("seller")
+          .select("store_name, contact_number, status")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const profile = userRow
+          ? {
+              ...userRow,
+              role: sellerRow?.status === "approved" ? "seller" : "customer",
+              phone: customerRow?.phone ?? null,
+              address: customerRow?.address ?? null,
+              store_name: sellerRow?.store_name ?? null,
+              contact_number: sellerRow?.contact_number ?? null,
+              status: sellerRow?.status ?? null,
+            }
+          : null;
+        dispatch(setProfile(profile));
       }
       dispatch(setAuthReady(true));
     };
@@ -60,8 +112,6 @@ function App() {
     <>
       <Toaster
         position="top-center"
-        reverseOrder={false}
-        gutter={8}
         toastOptions={{
           duration: 3000,
           style: {
@@ -73,18 +123,6 @@ function App() {
             borderRadius: "8px",
             boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
           },
-          success: {
-            style: {
-              background: "#000",
-              border: "2px solid #10b981",
-            },
-          },
-          error: {
-            style: {
-              background: "#000",
-              border: "2px solid #ef4444",
-            },
-          },
         }}
       />
       <Router>
@@ -95,8 +133,12 @@ function App() {
           {/* Public route: redirects logged-in users to home */}
           <Route element={<AuthRoute type="public" />}>
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/auth/check-email" element={<CheckEmailPage />} />
           </Route>
           <Route path="/" element={<HomePage />} />
+          <Route element={<AuthRoute type="private" />}>
+            <Route path="/profile" element={<Profile />} />
+          </Route>
         </Routes>
 
         <Footer />
