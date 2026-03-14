@@ -1,0 +1,96 @@
+import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
+
+import "swiper/css";
+import "swiper/css/autoplay";
+
+const slugify = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "");
+
+const NewArrivals = ({ products }: { products: any[] }) => {
+  return (
+    <section className="">
+      <h2 className="mb-6 text-2xl font-bold lg:text-[50px]">New Arrivals</h2>
+
+      <div className="">
+        <Swiper
+          modules={[Autoplay]}
+          spaceBetween={24}
+          slidesPerView={1}
+          allowTouchMove={true}
+          speed={3000}
+          loop
+          loopAdditionalSlides={5}
+          breakpoints={{
+            640: { slidesPerView: 2 },
+            1024: { slidesPerView: 4 },
+          }}
+          autoplay={{
+            delay: 0,
+            disableOnInteraction: true,
+            waitForTransition: false,
+            pauseOnMouseEnter: false,
+          }}
+        >
+          {(products ?? []).map((product) => (
+            <SwiperSlide key={product.id}>
+              <Link to={`/product/${product.id}/${slugify(product.title)}`}>
+                <Card className="overflow-hidden ">
+                  <CardHeader className="p-4 flex flex-col items-center justify-center">
+                    <div className="bg-[#F0EEED] h-[200px] w-full overflow-hidden rounded-[20px] lg:h-[298px] lg:w-[295px]">
+                      <img
+                        src={product.images?.[0] ?? product.image ?? ""}
+                        alt={product.title ?? "Product"}
+                        className="h-full w-full object-cover object-center"
+                      />
+                    </div>
+                    <CardTitle className="mt-2 line-clamp-2 text-[20px] font-bold text-center">
+                      {product.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardFooter className="border-t p-4 pt-0 flex justify-between items-center">
+                    <p className="text-sm font-semibold">${product.price}</p>
+                    <p className="text-sm font-semibold">
+                      {[...Array(5)].map((_, i) => (
+                        <span
+                          key={i}
+                          className={
+                            i < Math.round(product.rating)
+                              ? "text-yellow-400"
+                              : "text-gray-300"
+                          }
+                        >
+                          &#9733;
+                        </span>
+                      ))}
+                    </p>
+                  </CardFooter>
+                </Card>
+              </Link>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+
+      <div className="mt-8">
+        <Link to="/shop/top-selling">
+          <Button
+            variant="outline"
+            className="rounded-full border-black/10 bg-white px-8 py-3 font-normal text-black transition-colors hover:bg-black hover:text-white"
+          >
+            View all
+          </Button>
+        </Link>
+      </div>
+    </section>
+  );
+};
+
+export default NewArrivals;

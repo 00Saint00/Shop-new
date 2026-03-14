@@ -20,18 +20,21 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Toaster } from "./components/ui/sonner";
 import Profile from "./pages/profile/Profile";
+import ProductDetail from "./pages/productDetail/ProductDetail";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const syncAuth = async (user: { id: string; email_confirmed_at?: string | null } | null) => {
+    const syncAuth = async (
+      user: { id: string; email_confirmed_at?: string | null } | null,
+    ) => {
       if (!user) {
         dispatch(logout());
       } else {
         dispatch(setUser(user));
-        
+
         // Check if email is verified and update approved status if needed
         // The database trigger should handle this, but we check here as a backup
         if (user.email_confirmed_at) {
@@ -40,7 +43,7 @@ function App() {
             .select("approved")
             .eq("id", user.id)
             .single();
-          
+
           // If email is verified but user is not approved, trigger the update
           // (This is a backup - the database trigger should handle it automatically)
           if (userCheck && !userCheck.approved) {
@@ -50,7 +53,7 @@ function App() {
               .eq("id", user.id);
           }
         }
-        
+
         // Load user profile data
         const { data: userRow } = await supabase
           .from("users")
@@ -136,6 +139,7 @@ function App() {
             <Route path="/auth/check-email" element={<CheckEmailPage />} />
           </Route>
           <Route path="/" element={<HomePage />} />
+          <Route path="/product/:id/:slug" element={<ProductDetail />} />
           <Route element={<AuthRoute type="private" />}>
             <Route path="/profile" element={<Profile />} />
           </Route>

@@ -108,16 +108,12 @@ const Header = () => {
 
                   {userProfile?.avatar ? (
                     <img
-                      src={
-                        userProfile?.avatar ?? (
-                          <CircleUser className="h-[24px] w-[24px]" />
-                        )
-                      }
+                      src={userProfile.avatar}
                       alt="Avatar"
-                      className="h-[40px] w-[40x] rounded-full object-cover"
+                      className="h-[40px] w-[40px] rounded-full object-cover"
                     />
                   ) : (
-                    <CircleUser className="h-[24px] w-[24px]" />
+                    <CircleUser className="h-[40px] w-[40px]" />
                   )}
 
                   {/* <img
