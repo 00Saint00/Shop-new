@@ -70,19 +70,43 @@ const Header = () => {
               </button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent className="w-48">
+            <DropdownMenuContent className="w-56">
               <DropdownMenuItem asChild>
-                <div>Men</div>
+                <Link to="/shop/men" className="cursor-pointer">
+                  Men
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <div>Women</div>
+                <Link to="/shop/women" className="cursor-pointer">
+                  Women
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/shop/electronics" className="cursor-pointer">
+                  Electronics
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/shop/fragrances" className="cursor-pointer">
+                  Fragrances
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <div>On Sale</div>
-          <div>New Arrival</div>
-          <div>Brands</div>
+          <Link
+            to="/shop/new-arrivals"
+            className="px-2 py-1 hover:text-gray-800 transition-colors"
+          >
+            New Arrival
+          </Link>
+          <Link
+            to="/brands"
+            className="px-2 py-1 hover:text-gray-800 transition-colors"
+          >
+            Brands
+          </Link>
         </nav>
 
         {/* Search (Desktop Only) */}
@@ -113,7 +137,7 @@ const Header = () => {
                       className="h-[40px] w-[40px] rounded-full object-cover"
                     />
                   ) : (
-                    <CircleUser className="h-[40px] w-[40px]" />
+                    <CircleUser className="h-[24px] w-[24px]" />
                   )}
 
                   {/* <img

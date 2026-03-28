@@ -21,6 +21,12 @@ import { supabase } from "@/lib/supabase";
 import { Toaster } from "./components/ui/sonner";
 import Profile from "./pages/profile/Profile";
 import ProductDetail from "./pages/productDetail/ProductDetail";
+import Shop from "./pages/shop/Shop";
+import Men from "./pages/shop/men/Men";
+import Women from "./pages/shop/women/Women";
+import Electronics from "./pages/shop/electronics/Electronics";
+import Fragrances from "./pages/shop/fragrances/Fragrances";
+import Brands from "./pages/brands/Brands";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -140,6 +146,14 @@ function App() {
           </Route>
           <Route path="/" element={<HomePage />} />
           <Route path="/product/:id/:slug" element={<ProductDetail />} />
+          <Route path="/shop/brand/:brandSlug" element={<Shop />} />
+          <Route path="/shop/men" element={<Men />} />
+          <Route path="/shop/women" element={<Women />} />
+          <Route path="/shop/electronics" element={<Electronics />} />
+          <Route path="/shop/fragrances" element={<Fragrances />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/shop/:sortBy" element={<Shop />} />
+          <Route path="/brands" element={<Brands />} />
           <Route element={<AuthRoute type="private" />}>
             <Route path="/profile" element={<Profile />} />
           </Route>

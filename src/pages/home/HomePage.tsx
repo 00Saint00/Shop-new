@@ -92,13 +92,12 @@ const HomePage = () => {
         </Swiper>
       </div>
       <div className="px-[16px] lg:px-[100px] py-16">
-
-      <section className="pb-12 text-center md:pb-16">
-        <NewArrivals products={latestArrivals} />
-      </section>
-      <section className="pv-12 text-center md:pb-16">
-        <TopSelling products={topSelling} />
-      </section>
+        <section className="pb-12 text-center md:pb-16">
+          <NewArrivals products={latestArrivals} />
+        </section>
+        <section className="pv-12 text-center md:pb-16">
+          <TopSelling products={topSelling} />
+        </section>
       </div>
     </div>
   );

@@ -1,37 +1,131 @@
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Heart } from "lucide-react";
+
+function ProductDetailSkeleton() {
+  return (
+    <div
+      className="px-4 pt-[80px] pb-[130px] lg:px-[100px]"
+      aria-busy="true"
+      aria-label="Loading product"
+    >
+      <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+        <div className="flex w-full shrink-0 gap-4 lg:w-1/2">
+          <div className="hidden w-20 flex-col gap-3 lg:flex">
+            <Skeleton className="aspect-square w-full rounded-lg" />
+            <Skeleton className="aspect-square w-full rounded-lg" />
+            <Skeleton className="aspect-square w-full rounded-lg" />
+          </div>
+          <Skeleton className="aspect-square w-full rounded-xl" />
+        </div>
+        <div className="flex w-full flex-col justify-center gap-3 lg:w-1/2">
+          <Skeleton className="h-9 w-full max-w-lg lg:h-10" />
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="mt-1 h-8 w-28" />
+          <Skeleton className="mt-4 h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-4/5 max-w-xl" />
+          <div className="mt-4 flex gap-2 border-t border-transparent pt-4">
+            <Skeleton className="h-10 w-12 rounded-full" />
+            <Skeleton className="h-10 w-12 rounded-full" />
+            <Skeleton className="h-10 w-12 rounded-full" />
+            <Skeleton className="h-10 w-12 rounded-full" />
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-4 border-t border-transparent pt-4">
+            <Skeleton className="h-12 rounded-full lg:h-14" />
+            <Skeleton className="h-12 rounded-full lg:h-14" />
+          </div>
+        </div>
+      </div>
+      <div className="mt-10 space-y-4">
+        <div className="flex flex-wrap gap-4 py-5">
+          <Skeleton className="h-10 w-36" />
+          <Skeleton className="h-10 w-44" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+        <Skeleton className="h-40 w-full max-w-3xl rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+function ProductDetailError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="px-4 pt-[80px] pb-[130px] lg:px-[100px]">
+      <div className="mx-auto flex max-w-lg flex-col items-center text-center">
+        <p className="text-lg font-semibold text-foreground">{message}</p>
+        <p className="mt-2 text-sm text-black/60">
+          Check the link or try again in a moment.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {onRetry ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full"
+              onClick={onRetry}
+            >
+              Try again
+            </Button>
+          ) : null}
+          <Button asChild className="rounded-full bg-black text-white hover:bg-black/90">
+            <Link to="/">Back to home</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ProductDetail = () => {
+  const { id } = useParams();
   const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(id));
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>("");
-  const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
+
+  const fetchProduct = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        `https://dummyjson.com/products/${id}`,
+      );
+      setProduct(response.data);
+      setSelectedImage("");
+    } catch {
+      setProduct(null);
+      setError("We couldn’t load this product.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axios.get(
-          `https://dummyjson.com/products/${id}`,
-        );
-        setProduct(response.data);
-      } catch {
-        setError("Failed to load product.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!id) return;
     fetchProduct();
+  }, [id, retryKey, fetchProduct]);
+
+  useEffect(() => {
+    setQuantity(1);
   }, [id]);
+
+  const handleRetry = () => setRetryKey((k) => k + 1);
 
   const images = useMemo(() => {
     const list = Array.isArray(product?.images) ? product.images : [];
@@ -41,9 +135,30 @@ const ProductDetail = () => {
 
   const mainImageSrc = selectedImage || images[0] || "";
 
-  if (loading) return null;
-  if (error) return null;
-  if (!product) return null;
+  if (!id) {
+    return (
+      <ProductDetailError message="This product link is invalid or incomplete." />
+    );
+  }
+
+  if (loading) {
+    return <ProductDetailSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <ProductDetailError message={error} onRetry={handleRetry} />
+    );
+  }
+
+  if (!product) {
+    return (
+      <ProductDetailError
+        message="This product could not be found."
+        onRetry={handleRetry}
+      />
+    );
+  }
 
   return (
     <div className="px-4 pt-[80px] pb-[130px] lg:px-[100px]">
@@ -89,21 +204,28 @@ const ProductDetail = () => {
           <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
             {product.title}
           </h1>
-          <div className="flex gap-4 mt-3">
-            <p className="text-sm font-semibold">
-              {[...Array(5)].map((_, i) => (
-                <span
-                  key={i}
-                  className={
-                    i < Math.round(product.rating)
-                      ? "text-yellow-400"
-                      : "text-gray-300"
-                  }
-                >
-                  &#9733;
-                </span>
-              ))}
-            </p>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold">
+                {[...Array(5)].map((_, i) => (
+                  <span
+                    key={i}
+                    className={
+                      i < Math.round(product.rating)
+                        ? "text-yellow-400"
+                        : "text-gray-300"
+                    }
+                  >
+                    &#9733;
+                  </span>
+                ))}
+              </p>
+              <Heart
+                className="h-4 w-4 shrink-0 text-black/35"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+            </div>
             <p className="text-sm font-semibold">
               {Math.round(product.rating)} /5 stars
             </p>
@@ -157,15 +279,28 @@ const ProductDetail = () => {
               <button
                 type="button"
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm transition-colors hover:bg-black hover:text-white lg:h-9 lg:w-9 lg:text-lg"
+                onClick={() =>
+                  setQuantity((q) => Math.max(1, q - 1))
+                }
               >
                 -
               </button>
               <span className="min-w-[1.5rem] text-center text-sm font-medium lg:text-lg">
-                1
+                {quantity}
               </span>
               <button
                 type="button"
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm transition-colors hover:bg-black hover:text-white lg:h-9 lg:w-9 lg:text-lg"
+                onClick={() =>
+                  setQuantity((q) => {
+                    const cap =
+                      typeof product?.stock === "number" &&
+                      product.stock > 0
+                        ? product.stock
+                        : 999;
+                    return Math.min(cap, q + 1);
+                  })
+                }
               >
                 +
               </button>
