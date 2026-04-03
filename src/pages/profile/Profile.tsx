@@ -1,6 +1,7 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Home, User, Settings,Heart } from "lucide-react";
+import Wishlist from "./wishlist/Wishlist";
 import EditProfile from "./editProfile/EditProfile";
 
 const Profile = () => {
@@ -36,7 +37,9 @@ const Profile = () => {
             <TabsContent value="profile">
               <EditProfile />
             </TabsContent>
-            <TabsContent value="dashboard">Edit Dashboard</TabsContent>
+            <TabsContent value="dashboard">
+              <Wishlist />
+            </TabsContent>
             <TabsContent value="settings">Settings content here</TabsContent>
           </div>
         </Tabs>

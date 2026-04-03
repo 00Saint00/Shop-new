@@ -6,6 +6,9 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/Store";
 
 function ProductDetailSkeleton() {
   return (
@@ -79,7 +82,10 @@ function ProductDetailError({
               Try again
             </Button>
           ) : null}
-          <Button asChild className="rounded-full bg-black text-white hover:bg-black/90">
+          <Button
+            asChild
+            className="rounded-full bg-black text-white hover:bg-black/90"
+          >
             <Link to="/">Back to home</Link>
           </Button>
         </div>
@@ -97,15 +103,40 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("");
   const [retryKey, setRetryKey] = useState(0);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
+  const user = useSelector(
+    (state: RootState) => state.auth.user as { id: string } | null,
+  );
+
+  useEffect(() => {
+    if (!user || !id) {
+      setIsWishlisted(false);
+      return;
+    }
+
+    const checkWishlist = async () => {
+      const { data, error } = await supabase
+        .from("wishlist")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("product_id", String(id))
+        .limit(1);
+
+      if (!error) {
+        setIsWishlisted((data?.length ?? 0) > 0);
+      }
+    };
+
+    checkWishlist();
+  }, [user, id]);
 
   const fetchProduct = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(
-        `https://dummyjson.com/products/${id}`,
-      );
+      const response = await axios.get(`https://dummyjson.com/products/${id}`);
       setProduct(response.data);
       setSelectedImage("");
     } catch {
@@ -146,9 +177,7 @@ const ProductDetail = () => {
   }
 
   if (error) {
-    return (
-      <ProductDetailError message={error} onRetry={handleRetry} />
-    );
+    return <ProductDetailError message={error} onRetry={handleRetry} />;
   }
 
   if (!product) {
@@ -159,6 +188,26 @@ const ProductDetail = () => {
       />
     );
   }
+
+  const handleWishlist = async () => {
+    if (!user || !id) return toast.error("Please login to add to wishlist");
+    if (!isWishlisted) {
+      await supabase.from("wishlist").insert({
+        user_id: user.id,
+        product_id: String(id),
+      });
+      setIsWishlisted(true);
+      toast.success("Added to wishlist");
+    } else {
+      await supabase
+        .from("wishlist")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("product_id", String(id));
+      setIsWishlisted(false);
+      toast.success("Removed from wishlist");
+    }
+  };
 
   return (
     <div className="px-4 pt-[80px] pb-[130px] lg:px-[100px]">
@@ -220,11 +269,34 @@ const ProductDetail = () => {
                   </span>
                 ))}
               </p>
-              <Heart
-                className="h-4 w-4 shrink-0 text-black/35"
+              <button
+                        type="button"
+                        aria-label={`${isWishlisted ? "Remove from wishlist" : "Add to wishlist"} ${product.title ?? "product"}`}
+                        className={[
+                          "-m-1 rounded-full p-1 transition-colors hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20",
+                          isWishlisted ? "text-red-500" : "text-black/35 hover:text-red-500",
+                        ].join(" ")}
+                        onClick={(e) => {
+                          handleWishlist();
+                        }}
+                      >
+                        <Heart
+                          className={[
+                            "h-4 w-4 transition-colors",
+                            isWishlisted ? "fill-red-500 text-red-500" : "text-inherit",
+                          ].join(" ")}
+                          strokeWidth={1.75}
+                        />
+                      </button>
+              {/* <Heart
+                className={[
+                  "h-4 w-4 shrink-0 transition-colors",
+                  isWishlisted ? "fill-red-500 text-red-500" : "text-black/35",
+                ].join(" ")}
                 strokeWidth={1.75}
                 aria-hidden
-              />
+                onClick={handleWishlist}
+              /> */}
             </div>
             <p className="text-sm font-semibold">
               {Math.round(product.rating)} /5 stars
@@ -279,9 +351,7 @@ const ProductDetail = () => {
               <button
                 type="button"
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm transition-colors hover:bg-black hover:text-white lg:h-9 lg:w-9 lg:text-lg"
-                onClick={() =>
-                  setQuantity((q) => Math.max(1, q - 1))
-                }
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               >
                 -
               </button>
@@ -294,8 +364,7 @@ const ProductDetail = () => {
                 onClick={() =>
                   setQuantity((q) => {
                     const cap =
-                      typeof product?.stock === "number" &&
-                      product.stock > 0
+                      typeof product?.stock === "number" && product.stock > 0
                         ? product.stock
                         : 999;
                     return Math.min(cap, q + 1);
@@ -320,103 +389,115 @@ const ProductDetail = () => {
       <div className="mt-10">
         <Tabs defaultValue="prouctDetails" className="w-full">
           <TabsList className="flex h-auto w-full flex-row gap-4 py-5">
-            <TabsTrigger value="prouctDetails" className="bg-transparent py-5 text-[16px] font-bold data-[state=active]:bg-transparent ">
+            <TabsTrigger
+              value="prouctDetails"
+              className="bg-transparent py-5 text-[16px] font-bold data-[state=active]:bg-transparent "
+            >
               Product Details
             </TabsTrigger>
-            <TabsTrigger value="ratingsAndReviews" className="bg-transparent py-5 text-[16px] font-bold data-[state=active]:bg-transparent ">
+            <TabsTrigger
+              value="ratingsAndReviews"
+              className="bg-transparent py-5 text-[16px] font-bold data-[state=active]:bg-transparent "
+            >
               Ratings and Reviews
             </TabsTrigger>
-            <TabsTrigger value="faqs" className="bg-transparent py-5 text-[16px] font-bold data-[state=active]:bg-transparent ">
+            <TabsTrigger
+              value="faqs"
+              className="bg-transparent py-5 text-[16px] font-bold data-[state=active]:bg-transparent "
+            >
               FAQs
             </TabsTrigger>
           </TabsList>
 
           {/* product details content */}
-         <div className="mt-4">
-         <TabsContent value="prouctDetails">
-            <div>
-              <div className="flex justify-between">
-                <p className="text-[20px] font-medium">Brand:</p>
-                <p className="text-[20px] font-bold">
-                  {product.brand}
-                </p>
+          <div className="mt-4">
+            <TabsContent value="prouctDetails">
+              <div>
+                <div className="flex justify-between">
+                  <p className="text-[20px] font-medium">Brand:</p>
+                  <p className="text-[20px] font-bold">{product.brand}</p>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <p className="text-[20px] font-medium">Category:</p>
+                  <p className="text-[20px] font-bold">{product.category}</p>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <p className="text-[20px] font-medium">
+                    Shipping Information:
+                  </p>
+                  <p className="text-[20px] font-bold">
+                    {product.shippingInformation}
+                  </p>
+                </div>
               </div>
-              <div className="flex justify-between mt-2">
-                <p className="text-[20px] font-medium">Category:</p>
-                <p className="text-[20px] font-bold">
-                  {product.category}
-                </p>
-              </div>
-              <div className="flex justify-between mt-2">
-                <p className="text-[20px] font-medium">
-                  Shipping Information:
-                </p>
-                <p className="text-[20px] font-bold">
-                  {product.shippingInformation}
-                </p>
-              </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="ratingsAndReviews">
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              {(product.reviews ?? []).map((review: any, i: number) => {
-                const rating = Math.min(5, Math.max(0, Number(review.rating) ?? 0));
-                const dateStr = review.date
-                  ? new Date(review.date).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })
-                  : "";
-                return (
-                  <div
-                    key={i}
-                    className="rounded-lg border border-black/10 bg-white p-4"
-                  >
-                    <div className="mb-2 flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span
-                          key={star}
-                          className={
-                            star <= rating
-                              ? "text-yellow-400"
-                              : "text-gray-300"
-                          }
-                        >
-                          &#9733;
-                        </span>
-                      ))}
-                    </div>
-                    <p className="font-semibold text-foreground">
-                      {review.reviewerName ?? "Anonymous"}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {review.comment ?? ""}
-                    </p>
-                    {dateStr && (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Posted on {dateStr}
+            </TabsContent>
+            <TabsContent value="ratingsAndReviews">
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                {(product.reviews ?? []).map((review: any, i: number) => {
+                  const rating = Math.min(
+                    5,
+                    Math.max(0, Number(review.rating) ?? 0),
+                  );
+                  const dateStr = review.date
+                    ? new Date(review.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "";
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-black/10 bg-white p-4"
+                    >
+                      <div className="mb-2 flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={
+                              star <= rating
+                                ? "text-yellow-400"
+                                : "text-gray-300"
+                            }
+                          >
+                            &#9733;
+                          </span>
+                        ))}
+                      </div>
+                      <p className="font-semibold text-foreground">
+                        {review.reviewerName ?? "Anonymous"}
                       </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            {(product.reviews ?? []).length === 0 && (
-              <p className="mt-4 text-sm text-muted-foreground">No reviews yet.</p>
-            )}
-          </TabsContent>
-          <TabsContent value="faqs">
-            <div className="mt-4 space-y-2">
-              {(product.faqs ?? []).map((faq: any, i: number) => (
-                <p key={i} className="font-medium">{faq.question}</p>
-              ))}
-              {(product.faqs ?? []).length === 0 && (
-                <p className="text-sm text-muted-foreground">No FAQs yet.</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {review.comment ?? ""}
+                      </p>
+                      {dateStr && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Posted on {dateStr}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {(product.reviews ?? []).length === 0 && (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  No reviews yet.
+                </p>
               )}
-            </div>
-          </TabsContent>
-         </div>
+            </TabsContent>
+            <TabsContent value="faqs">
+              <div className="mt-4 space-y-2">
+                {(product.faqs ?? []).map((faq: any, i: number) => (
+                  <p key={i} className="font-medium">
+                    {faq.question}
+                  </p>
+                ))}
+                {(product.faqs ?? []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">No FAQs yet.</p>
+                )}
+              </div>
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </div>
