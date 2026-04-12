@@ -21,23 +21,6 @@ Fashion and general merchandise storefront built with React. Product data comes 
 - **Product detail** (`/product/:id/:slug`) — Gallery, ratings, size UI, quantity (min 1, max stock when available), add-to-cart toast, loading skeletons and retry on error.
 - **Auth** — Register, login, check-email flow; protected **Profile** route.
 - **Wishlist** — Logged-in users can add or remove DummyJSON products in a Supabase `wishlist` table. Hearts work on the shop grid, category shops, home carousels (New Arrivals / Top Selling), and product detail. Shared state lives in **`WishlistProvider`** (`src/context/WishlistContext.tsx`), mounted in `main.tsx`, so every screen sees the same list without duplicating Supabase calls. The profile **Wishlist** tab lists saved items and removals stay in sync with hearts elsewhere.
-- **Search** — On **large viewports** (`lg+`), the header search bar submits to **`/shop?q=…`**. The Shop page reads `q` with React Router’s `useSearchParams`; if `q` is non-empty it loads results from DummyJSON **`GET /products/search`** (via Axios `params`, which appends a properly encoded `?q=` query string). With no `q`, the shop loads the full catalog as before. A “Clear search” link removes the query string while keeping the current shop path (including sort or brand routes).
-
-## Routes (overview)
-
-| Path | Description |
-|------|-------------|
-| `/` | Home |
-| `/shop` | All products (optional query: `?q=term` for DummyJSON search) |
-| `/shop/:sortBy` | Sorted shop (`top-selling`, `new-arrivals`, `a-z`, `z-a`); same `?q=` optional |
-| `/shop/brand/:brandSlug` | Products for one brand; optional `?q=` searches first, then brand filter applies |
-| `/shop/men`, `/shop/women`, `/shop/electronics`, `/shop/fragrances` | Category-filtered listings |
-| `/brands` | Brand index |
-| `/product/:id/:slug` | Product detail |
-| `/auth`, `/auth/check-email` | Auth (public when logged out) |
-| `/profile` | Profile (private) |
-
-Register **`/shop/brand/:brandSlug`** and static segments like **`/shop/men`** above the generic **`/shop/:sortBy`** route so those paths are not parsed as sort keys.
 
 ## Environment variables
 
