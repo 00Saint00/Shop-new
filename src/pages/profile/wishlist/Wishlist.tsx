@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store/Store";
+import { useWishlist } from "@/context/WishlistContext";
 import { Heart } from "lucide-react";
-import { toast } from "sonner";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 type WishlistProduct = {
@@ -29,6 +29,7 @@ const Wishlist = () => {
   const user = useSelector(
     (state: RootState) => state.auth.user as { id: string } | null,
   );
+  const { toggleWishlist } = useWishlist();
 
   useEffect(() => {
     if (!user?.id) {
@@ -77,21 +78,13 @@ const Wishlist = () => {
     if (!user?.id) return;
 
     setRemovingId(productId);
-    const { error } = await supabase
-      .from("wishlist")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("product_id", String(productId));
-
-    if (error) {
-      toast.error("Couldn't remove item from wishlist");
-      setRemovingId(null);
-      return;
-    }
-
-    setProducts((current) => current.filter((product) => product.id !== productId));
-    toast.success("Removed from wishlist");
+    const ok = await toggleWishlist(productId);
     setRemovingId(null);
+    if (ok) {
+      setProducts((current) =>
+        current.filter((product) => product.id !== productId),
+      );
+    }
   };
 
   if (!user) {

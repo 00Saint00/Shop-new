@@ -5,7 +5,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import Logo from "../../assets/logo/SHOP.CO.svg";
 import {
   ChevronDown,
@@ -15,21 +20,29 @@ import {
   Clipboard,
   User,
   ClipboardCheck,
-  X,
   ShoppingCart,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "@/store/Store";
-import { setUser } from "@/store/slice/authSlice";
 import { logout } from "@/store/slice/authSlice";
 
+const SHOP_SEARCH_PATH =
+  /^\/shop\/?$|^\/shop\/(top-selling|new-arrivals|a-z|z-a)$|^\/shop\/brand\/[^/]+$/;
+
 const Header = () => {
-  const [count, setCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [searchDraft, setSearchDraft] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (SHOP_SEARCH_PATH.test(location.pathname)) {
+      setSearchDraft(searchParams.get("q") ?? "");
+    }
+  }, [location.pathname, searchParams]);
 
   const user = useSelector((state: RootState) => state.auth.user);
   const userProfile = useSelector((state: RootState) => state.auth.profile);
@@ -110,14 +123,30 @@ const Header = () => {
         </nav>
 
         {/* Search (Desktop Only) */}
-        <div className="hidden lg:flex items-center border-0 rounded-[62px] px-[16px] py-[12px] bg-[#f0f0f0] w-[577px] h-[48px]">
-          <Search className="h-[24px] w-[24px] text-gray-400" />
+        <form
+          className="hidden lg:flex items-center border-0 rounded-[62px] px-[16px] py-[12px] bg-[#f0f0f0] w-[577px] h-[48px]"
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const q = searchDraft.trim();
+            if (q) {
+              navigate(`/shop?q=${encodeURIComponent(q)}`);
+            } else {
+              navigate("/shop");
+            }
+          }}
+        >
+          <Search className="h-[24px] w-[24px] shrink-0 text-gray-400" />
           <input
-            type="text"
+            type="search"
+            name="q"
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
             placeholder="Search for products..."
-            className="px-4 py-2 flex-1 focus:outline-none bg-transparent"
+            autoComplete="off"
+            className="min-w-0 px-4 py-2 flex-1 focus:outline-none bg-transparent"
           />
-        </div>
+        </form>
 
         <div className="flex items-center gap-[14px]">
           <div className="relative">

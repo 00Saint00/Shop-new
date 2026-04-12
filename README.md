@@ -20,16 +20,17 @@ Fashion and general merchandise storefront built with React. Product data comes 
 - **Brands** (`/brands`) — Lists brands with product counts, client-side name filter, links into brand-filtered shop.
 - **Product detail** (`/product/:id/:slug`) — Gallery, ratings, size UI, quantity (min 1, max stock when available), add-to-cart toast, loading skeletons and retry on error.
 - **Auth** — Register, login, check-email flow; protected **Profile** route.
-- **Wishlist affordance** — Heart control on product cards is a separate button (not trapped inside the product link) for future wishlist wiring.
+- **Wishlist** — Logged-in users can add or remove DummyJSON products in a Supabase `wishlist` table. Hearts work on the shop grid, category shops, home carousels (New Arrivals / Top Selling), and product detail. Shared state lives in **`WishlistProvider`** (`src/context/WishlistContext.tsx`), mounted in `main.tsx`, so every screen sees the same list without duplicating Supabase calls. The profile **Wishlist** tab lists saved items and removals stay in sync with hearts elsewhere.
+- **Search** — On **large viewports** (`lg+`), the header search bar submits to **`/shop?q=…`**. The Shop page reads `q` with React Router’s `useSearchParams`; if `q` is non-empty it loads results from DummyJSON **`GET /products/search`** (via Axios `params`, which appends a properly encoded `?q=` query string). With no `q`, the shop loads the full catalog as before. A “Clear search” link removes the query string while keeping the current shop path (including sort or brand routes).
 
 ## Routes (overview)
 
 | Path | Description |
 |------|-------------|
 | `/` | Home |
-| `/shop` | All products |
-| `/shop/:sortBy` | Sorted shop (`top-selling`, `new-arrivals`, `a-z`, `z-a`) |
-| `/shop/brand/:brandSlug` | Products for one brand |
+| `/shop` | All products (optional query: `?q=term` for DummyJSON search) |
+| `/shop/:sortBy` | Sorted shop (`top-selling`, `new-arrivals`, `a-z`, `z-a`); same `?q=` optional |
+| `/shop/brand/:brandSlug` | Products for one brand; optional `?q=` searches first, then brand filter applies |
 | `/shop/men`, `/shop/women`, `/shop/electronics`, `/shop/fragrances` | Category-filtered listings |
 | `/brands` | Brand index |
 | `/product/:id/:slug` | Product detail |
@@ -47,7 +48,9 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Without valid Supabase values, auth-related features will not work; catalog pages that only use DummyJSON can still be explored if routing does not force login.
+Without valid Supabase values, auth-related features and wishlist persistence will not work; catalog and search pages that only use DummyJSON can still be used when routing does not force login.
+
+Supabase needs a **`wishlist`** table (and RLS policies) compatible with the app: `user_id` (auth user UUID) and `product_id` (text, DummyJSON product id as string). See your Supabase dashboard for schema details.
 
 ## Scripts
 
@@ -63,6 +66,7 @@ npm run lint     # ESLint
 
 - `src/pages/` — Route-level screens (home, shop, product detail, auth, profile, brands, category shops).
 - `src/components/` — Shared UI (header, footer, splash, shadcn-style `ui/*`).
+- `src/context/` — React context providers (e.g. `WishlistContext` for global wishlist state).
 - `src/store/` — Redux store and `authSlice`.
 - `src/lib/` — Supabase client and utilities.
 

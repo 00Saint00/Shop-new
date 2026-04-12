@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+  Link,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useWishlist } from "@/context/WishlistContext";
 
 const slugify = (text: string) =>
   text
@@ -57,6 +64,9 @@ const Shop = () => {
     brandSlug?: string;
   }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const searchQuery = (searchParams.get("q") ?? "").trim();
   const isBrandRoute = Boolean(brandSlug);
 
   const [brandSortBy, setBrandSortBy] = useState("all");
@@ -66,6 +76,7 @@ const Shop = () => {
 
   const urlSortBy = sortParam && SORT_SLUGS.has(sortParam) ? sortParam : "all";
   const sortBy = isBrandRoute ? brandSortBy : urlSortBy;
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   const setSort = (next: string) => {
     if (isBrandRoute) {
@@ -81,20 +92,36 @@ const Shop = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const response = await axios.get(
-          "https://dummyjson.com/products?limit=0",
-        );
-        setProducts(response.data.products ?? []);
+        if (searchQuery) {
+          const { data } = await axios.get(
+            "https://dummyjson.com/products/search",
+            { params: { q: searchQuery } },
+          );
+          if (!cancelled) setProducts(data.products ?? []);
+        } else {
+          const response = await axios.get(
+            "https://dummyjson.com/products?limit=0",
+          );
+          if (!cancelled) setProducts(response.data.products ?? []);
+        }
       } catch {
-        setError("Failed to fetch products.");
+        if (!cancelled) setError("Failed to fetch products.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-    fetchProducts();
-  }, []);
+
+    void fetchProducts();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchQuery]);
 
   const brandLabel = useMemo(() => {
     if (!brandSlug) return null;
@@ -177,7 +204,18 @@ const Shop = () => {
           <h2 className="text-[24px] lg:text-[32px] font-bold lg:mb-0 mb-[8px]">
             {isBrandRoute && brandLabel ? brandLabel : "Shop"}
           </h2>
-          {isBrandRoute ? (
+          {searchQuery ? (
+            <p className="mt-1 text-sm text-black/60">
+              Results for &ldquo;{searchQuery}&rdquo;
+              {" · "}
+              <Link
+                to={{ pathname: location.pathname, search: "" }}
+                className="underline hover:text-black"
+              >
+                Clear search
+              </Link>
+            </p>
+          ) : isBrandRoute ? (
             <p className="mt-1 text-sm text-black/60">
               <Link to="/brands" className="underline hover:text-black">
                 All brands
@@ -300,13 +338,27 @@ const Shop = () => {
                       <button
                         type="button"
                         aria-label={`Save ${product.title ?? "product"} to wishlist`}
-                        className="-m-1 rounded-full p-1 text-black/35 transition-colors hover:bg-black/5 hover:text-red-500 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20"
+                        className={[
+                          "-m-1 rounded-full p-1 transition-colors hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20",
+                          isWishlisted(product.id)
+                            ? "text-red-500"
+                            : "text-black/35 hover:text-red-500",
+                        ].join(" ")}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          void toggleWishlist(product.id);
                         }}
                       >
-                        <Heart className="h-4 w-4" strokeWidth={1.75} />
+                        <Heart
+                          className={[
+                            "h-4 w-4 transition-colors",
+                            isWishlisted(product.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-inherit",
+                          ].join(" ")}
+                          strokeWidth={1.75}
+                        />
                       </button>
                     </div>
                   </CardFooter>

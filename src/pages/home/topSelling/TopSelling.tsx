@@ -4,6 +4,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
+import { useWishlist } from "@/context/WishlistContext";
 
 import "swiper/css";
 import "swiper/css/autoplay";
@@ -15,6 +16,8 @@ const slugify = (text: string) =>
     .replace(/[^\w-]+/g, "");
 
 const TopSelling = ({ products }: { products: any[] }) => {
+  const { isWishlisted, toggleWishlist } = useWishlist();
+
   return (
     <section className="">
       <h2 className="mb-6 text-2xl font-bold lg:text-[50px]">Top Selling</h2>
@@ -83,13 +86,27 @@ const TopSelling = ({ products }: { products: any[] }) => {
                       <button
                         type="button"
                         aria-label={`Save ${product.title ?? "product"} to wishlist`}
-                        className="-m-1 rounded-full p-1 text-black/35 transition-colors hover:bg-black/5 hover:text-red-500 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20"
+                        className={[
+                          "-m-1 rounded-full p-1 transition-colors hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20",
+                          isWishlisted(product.id)
+                            ? "text-red-500"
+                            : "text-black/35 hover:text-red-500",
+                        ].join(" ")}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          void toggleWishlist(product.id);
                         }}
                       >
-                        <Heart className="h-4 w-4" strokeWidth={1.75} />
+                        <Heart
+                          className={[
+                            "h-4 w-4 transition-colors",
+                            isWishlisted(product.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-inherit",
+                          ].join(" ")}
+                          strokeWidth={1.75}
+                        />
                       </button>
                     </div>
                   </CardFooter>

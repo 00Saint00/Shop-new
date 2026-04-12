@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Heart } from "lucide-react";
+import { useWishlist } from "@/context/WishlistContext";
 
 const slugify = (text: string) =>
   text
@@ -30,6 +31,7 @@ export default function CategoryShop({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const allowed = useMemo(() => new Set(categories), [categories]);
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   useEffect(() => {
     const load = async () => {
@@ -138,16 +140,30 @@ export default function CategoryShop({
                       ))}
                     </p>
                     <button
-                      type="button"
-                      aria-label={`Save ${product.title ?? "product"} to wishlist`}
-                      className="-m-1 rounded-full p-1 text-black/35 transition-colors hover:bg-black/5 hover:text-red-500 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                    >
-                      <Heart className="h-4 w-4" strokeWidth={1.75} />
-                    </button>
+                        type="button"
+                        aria-label={`Save ${product.title ?? "product"} to wishlist`}
+                        className={[
+                          "-m-1 rounded-full p-1 transition-colors hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20",
+                          isWishlisted(product.id)
+                            ? "text-red-500"
+                            : "text-black/35 hover:text-red-500",
+                        ].join(" ")}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          void toggleWishlist(product.id);
+                        }}
+                      >
+                        <Heart
+                          className={[
+                            "h-4 w-4 transition-colors",
+                            isWishlisted(product.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-inherit",
+                          ].join(" ")}
+                          strokeWidth={1.75}
+                        />
+                      </button>
                   </div>
                 </CardFooter>
               </Card>

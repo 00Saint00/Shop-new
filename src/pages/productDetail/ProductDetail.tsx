@@ -6,9 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { useSelector } from "react-redux";
-import type { RootState } from "@/store/Store";
+import { useWishlist } from "@/context/WishlistContext";
 
 function ProductDetailSkeleton() {
   return (
@@ -103,33 +101,10 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("");
   const [retryKey, setRetryKey] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-
-  const user = useSelector(
-    (state: RootState) => state.auth.user as { id: string } | null,
-  );
-
-  useEffect(() => {
-    if (!user || !id) {
-      setIsWishlisted(false);
-      return;
-    }
-
-    const checkWishlist = async () => {
-      const { data, error } = await supabase
-        .from("wishlist")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("product_id", String(id))
-        .limit(1);
-
-      if (!error) {
-        setIsWishlisted((data?.length ?? 0) > 0);
-      }
-    };
-
-    checkWishlist();
-  }, [user, id]);
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const productIdNum = id ? Number(id) : NaN;
+  const listed =
+    Number.isFinite(productIdNum) && isWishlisted(productIdNum);
 
   const fetchProduct = useCallback(async () => {
     if (!id) return;
@@ -189,24 +164,9 @@ const ProductDetail = () => {
     );
   }
 
-  const handleWishlist = async () => {
-    if (!user || !id) return toast.error("Please login to add to wishlist");
-    if (!isWishlisted) {
-      await supabase.from("wishlist").insert({
-        user_id: user.id,
-        product_id: String(id),
-      });
-      setIsWishlisted(true);
-      toast.success("Added to wishlist");
-    } else {
-      await supabase
-        .from("wishlist")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("product_id", String(id));
-      setIsWishlisted(false);
-      toast.success("Removed from wishlist");
-    }
+  const handleWishlist = () => {
+    if (!Number.isFinite(productIdNum)) return;
+    void toggleWishlist(productIdNum);
   };
 
   return (
@@ -270,28 +230,30 @@ const ProductDetail = () => {
                 ))}
               </p>
               <button
-                        type="button"
-                        aria-label={`${isWishlisted ? "Remove from wishlist" : "Add to wishlist"} ${product.title ?? "product"}`}
-                        className={[
-                          "-m-1 rounded-full p-1 transition-colors hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20",
-                          isWishlisted ? "text-red-500" : "text-black/35 hover:text-red-500",
-                        ].join(" ")}
-                        onClick={(e) => {
-                          handleWishlist();
-                        }}
-                      >
-                        <Heart
-                          className={[
-                            "h-4 w-4 transition-colors",
-                            isWishlisted ? "fill-red-500 text-red-500" : "text-inherit",
-                          ].join(" ")}
-                          strokeWidth={1.75}
-                        />
-                      </button>
+                type="button"
+                aria-label={`${listed ? "Remove from wishlist" : "Add to wishlist"} ${product.title ?? "product"}`}
+                className={[
+                  "-m-1 rounded-full p-1 transition-colors hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20",
+                  listed
+                    ? "text-red-500"
+                    : "text-black/35 hover:text-red-500",
+                ].join(" ")}
+                onClick={(e) => {
+                  handleWishlist();
+                }}
+              >
+                <Heart
+                  className={[
+                    "h-4 w-4 transition-colors",
+                    listed ? "fill-red-500 text-red-500" : "text-inherit",
+                  ].join(" ")}
+                  strokeWidth={1.75}
+                />
+              </button>
               {/* <Heart
                 className={[
                   "h-4 w-4 shrink-0 transition-colors",
-                  isWishlisted ? "fill-red-500 text-red-500" : "text-black/35",
+                  listed ? "fill-red-500 text-red-500" : "text-black/35",
                 ].join(" ")}
                 strokeWidth={1.75}
                 aria-hidden
