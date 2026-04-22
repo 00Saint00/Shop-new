@@ -31,6 +31,7 @@
 5. Click **Run** to execute
 
 This will:
+
 - Add `approved` columns to your tables (if they don't exist)
 - Create triggers for automatic user creation
 - Create triggers for email verification approval
@@ -42,11 +43,11 @@ After running the SQL, verify the triggers exist:
 
 ```sql
 -- Check triggers
-SELECT * FROM pg_trigger 
+SELECT * FROM pg_trigger
 WHERE tgname IN ('on_auth_user_created', 'on_email_confirmed');
 
 -- Check functions
-SELECT proname FROM pg_proc 
+SELECT proname FROM pg_proc
 WHERE proname IN ('handle_new_user', 'handle_email_confirmation');
 ```
 
@@ -71,6 +72,7 @@ WHERE proname IN ('handle_new_user', 'handle_email_confirmation');
 Make sure your Row Level Security (RLS) policies allow:
 
 1. **Users can insert their own record** (for the trigger to work):
+
    ```sql
    CREATE POLICY "Users can insert own profile"
    ON users FOR INSERT
@@ -78,6 +80,7 @@ Make sure your Row Level Security (RLS) policies allow:
    ```
 
 2. **Users can read their own profile**:
+
    ```sql
    CREATE POLICY "Users can read own profile"
    ON users FOR SELECT
@@ -99,8 +102,8 @@ To automatically delete unverified users after 7 days:
 2. Run this in SQL Editor:
    ```sql
    SELECT cron.schedule(
-     'cleanup-unverified', 
-     '0 2 * * *', 
+     'cleanup-unverified',
+     '0 2 * * *',
      'SELECT cleanup_unverified_users()'
    );
    ```
@@ -110,6 +113,7 @@ This runs daily at 2 AM and deletes users with `approved: false` older than 7 da
 ## 🐛 Troubleshooting
 
 ### Issue: "Database error saving new user" on registration
+
 This means the trigger ran but failed, so the whole sign-up transaction was rolled back.
 
 1. **Get the real error**  
@@ -117,7 +121,6 @@ This means the trigger ran but failed, so the whole sign-up transaction was roll
 
 2. **Match table schemas**  
    The trigger expects:
-
    - **`public.users`**: columns `id` (uuid), `email` (text), `full_name` (text), `avatar` (text nullable), `role` (text), `approved` (boolean).  
      No extra **NOT NULL** columns without defaults, or the trigger must set them.
 
@@ -126,25 +129,30 @@ This means the trigger ran but failed, so the whole sign-up transaction was roll
 
 3. **Confirm triggers exist**  
    In SQL Editor run:
+
    ```sql
    SELECT tgname, tgrelid::regclass FROM pg_trigger WHERE tgname = 'on_auth_user_created';
    ```
+
    If this returns no row, run `supabase-triggers.sql` in this project’s Supabase SQL Editor.
 
 4. **RLS**  
    The trigger uses `SECURITY DEFINER`, so it runs as the function owner and normally bypasses RLS. If you still see permission errors in Postgres logs, ensure the function owner has permission to INSERT into `public.users` and `public.customers`.
 
 ### Issue: Users table not getting populated
+
 - **Check**: Did you run the SQL triggers?
 - **Check**: Are RLS policies allowing inserts?
 - **Check**: Look at Supabase logs for errors
 
 ### Issue: Approved not updating after email verification
+
 - **Check**: Is the email verification trigger created?
 - **Check**: Does `auth.users.email_confirmed_at` have a value?
 - **Note**: App.tsx has a backup check, but the trigger should handle it automatically
 
 ### Issue: Avatar not saving
+
 - **Check**: Storage bucket "avatars" exists and has proper policies
 - **Check**: User has permission to upload to storage
 - **Note**: Avatar upload happens after user creation, so it's a separate update

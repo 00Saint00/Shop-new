@@ -47,6 +47,9 @@ const Header = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const userProfile = useSelector((state: RootState) => state.auth.profile);
 
+  // Recovery flow creates a Supabase session; keep header in “signed out” chrome on this route
+  const hideSignedInChrome = location.pathname === "/reset-password";
+
   // useEffect(() => {
   //   supabase.auth.getUser().then(({ data }) => {
   //     if (data.user) {
@@ -153,7 +156,7 @@ const Header = () => {
             <ShoppingCart className="h-[24px] w-[24px]" />
           </div>
 
-          {user ? (
+          {user && !hideSignedInChrome ? (
             <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-1 focus:outline-none cursor-pointer">

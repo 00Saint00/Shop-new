@@ -66,6 +66,12 @@ const Login = ({ onLogin, serverError }: LoginProps) => {
         >
           {isSubmitting ? "Logging in..." : "Login"}
         </Button>
+
+        <p className="text-sm text-gray-600">
+          <a href="/forgot-password" className="text-black hover:underline">
+            Forgot Password?
+          </a>
+        </p>
       </form>
     </div>
   );
