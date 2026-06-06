@@ -1,6 +1,5 @@
-import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, User, Settings,Heart, ListOrdered } from "lucide-react";
+import { User, Settings, Heart, ListOrdered } from "lucide-react";
 import Wishlist from "./wishlist/Wishlist";
 import EditProfile from "./editProfile/EditProfile";
 import Order from "./orders/Order";

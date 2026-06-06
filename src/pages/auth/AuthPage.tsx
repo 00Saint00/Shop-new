@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Login from "./Login";
 import Register from "./Register";
 import { supabase } from "@/lib/supabase";
-import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -12,26 +11,11 @@ type ServerError = {
 };
 
 const AuthPage = () => {
-  const [user, setUser] = useState<User | null>(null);
   const [serverError, setServerError] = useState<ServerError | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession(); // get current session
-      if (session) {
-        setUser(session.user);
-      } else {
-        setUser(null); // user not logged in yet
-      }
-    };
-    getUser();
-  }, []);
-
   const handleLogin = async (data: { email: string; password: string }) => {
-    const { email, password } = data; // extract the two fields
+    const { email, password } = data;
     setServerError(null);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -41,16 +25,20 @@ const AuthPage = () => {
       if (error) throw error;
       navigate("/");
       console.log("User logged in:", data.user?.email, data.user);
-    } catch (error: any) {
-      setServerError({ message: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Login failed";
+      setServerError({ message });
     }
   };
 
-  const handleRegister = async (data: any) => {
+  const handleRegister = async (data: {
+    fullName: string;
+    email: string;
+    password: string;
+  }) => {
     try {
       const { fullName, email, password } = data;
 
-      // Sign up user with metadata; database trigger creates user and customer records
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -68,7 +56,6 @@ const AuthPage = () => {
         throw new Error("User creation failed");
       }
 
-      // Explicitly update public.users (trigger already created the row; ensure profile data is set)
       const { error: updateError } = await supabase
         .from("users")
         .update({
@@ -79,14 +66,15 @@ const AuthPage = () => {
 
       if (updateError) {
         console.error("Failed to update user profile:", updateError);
-        // Don't block registration - trigger may have already set these
       }
 
       navigate("/auth/check-email", { state: { email } });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Registration error:", error);
-      setServerError({ message: error.message });
-      toast.error(error.message || "Registration failed");
+      const message =
+        error instanceof Error ? error.message : "Registration failed";
+      setServerError({ message });
+      toast.error(message);
     }
   };
 

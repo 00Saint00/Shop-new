@@ -3,7 +3,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
@@ -100,7 +99,6 @@ const ProductDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState("");
   const [retryKey, setRetryKey] = useState(0);
   const { isWishlisted, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -237,7 +235,7 @@ const ProductDetail = () => {
                   "-m-1 rounded-full p-1 transition-colors hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20",
                   listed ? "text-red-500" : "text-black/35 hover:text-red-500",
                 ].join(" ")}
-                onClick={(e) => {
+                onClick={() => {
                   handleWishlist();
                 }}
               >
