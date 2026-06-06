@@ -10,6 +10,8 @@ export type Profile = {
   address: string | null;
   store_name: string | null;
   contact_number: string | null;
+  store_description: string | null;
+  business_address: string | null;
   status: string | null;
   approved?: boolean | null;
 } | null;

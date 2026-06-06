@@ -32,6 +32,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import { Cart } from "./pages/cart/Cart";
 import Checkout from "./pages/checkout/Checkout";
 import CheckoutConfirmation from "./pages/checkout/CheckoutConfirmation";
+import Dashboard from "./pages/dashboard/Dashboard";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -68,7 +69,7 @@ function App() {
         // Load user profile data
         const { data: userRow } = await supabase
           .from("users")
-          .select("id, full_name, email, avatar, approved")
+          .select("id, full_name, email, avatar, approved, role")
           .eq("id", user.id)
           .single();
         // customers table: no approved column (removed); we only use phone, address
@@ -79,19 +80,29 @@ function App() {
           .maybeSingle();
         const { data: sellerRow } = await supabase
           .from("seller")
-          .select("store_name, contact_number, status")
+          .select(
+            "store_name, contact_number, status, store_description, business_address",
+          )
           .eq("id", user.id)
           .maybeSingle();
 
         const profile = userRow
           ? {
               ...userRow,
-              role: sellerRow?.status === "approved" ? "seller" : "customer",
+              // role: sellerRow?.status === "approved" ? "seller" : "customer",
+              role:
+                userRow?.role === "admin"
+                  ? "admin"
+                  : sellerRow?.status === "approved"
+                    ? "seller"
+                    : "customer",
               phone: customerRow?.phone ?? null,
               address: customerRow?.address ?? null,
               store_name: sellerRow?.store_name ?? null,
               contact_number: sellerRow?.contact_number ?? null,
               status: sellerRow?.status ?? null,
+              store_description: sellerRow?.store_description ?? null,
+              business_address: sellerRow?.business_address ?? null,
             }
           : null;
         dispatch(setProfile(profile));
@@ -170,6 +181,9 @@ function App() {
               path="/checkout/confirmation/:orderId"
               element={<CheckoutConfirmation />}
             />
+          </Route>
+          <Route element={<AuthRoute type="admin" />}>
+            <Route path="/dashboard" element={<Dashboard />} />
           </Route>
         </Routes>
 

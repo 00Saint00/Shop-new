@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import AddressAutocomplete from "@/components/address/AddressAutocomplete";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store/Store";
 import { toast } from "sonner";
@@ -19,11 +20,13 @@ const Checkout = () => {
   const { cartItems, clearCart } = useCart();
   const profile = useSelector((state: RootState) => state.auth.profile);
   const navigate = useNavigate();
+  const [addressVerified, setAddressVerified] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ShippingFormData>({
     defaultValues: {
@@ -42,6 +45,7 @@ const Checkout = () => {
       phone: profile.phone ?? "",
       address: profile.address ?? "",
     });
+    setAddressVerified(!!profile.address);
   }, [profile, reset]);
 
   const total = cartItems.reduce(
@@ -251,19 +255,27 @@ const Checkout = () => {
                   <label className="mb-1 block text-sm font-medium">
                     Address
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Address"
-                    className="w-full rounded-md border px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-black"
-                    {...register("address", {
+                  <Controller
+                    name="address"
+                    control={control}
+                    rules={{
                       required: "Address is required",
-                    })}
+                      validate: () =>
+                        addressVerified ||
+                        "Please pick a valid address from the suggestions",
+                    }}
+                    render={({ field, fieldState }) => (
+                      <AddressAutocomplete
+                        value={field.value}
+                        verified={addressVerified}
+                        onChange={field.onChange}
+                        onVerifiedChange={setAddressVerified}
+                        placeholder="Start typing your address"
+                        className="w-full rounded-md border px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-black"
+                        error={fieldState.error?.message}
+                      />
+                    )}
                   />
-                  {errors.address && (
-                    <p className="text-sm text-red-500">
-                      {errors.address.message}
-                    </p>
-                  )}
                 </div>
               </div>
 

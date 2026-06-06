@@ -216,12 +216,14 @@ const Header = () => {
                     <p>My Profile</p>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <div className="flex">
-                    <ClipboardCheck className="h-4 w-4 mr-2" />
-                    <p>Dashboard</p>
-                  </div>
-                </DropdownMenuItem>
+                {userProfile?.role === "admin" ? (
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="flex cursor-pointer">
+                      <ClipboardCheck className="h-4 w-4 mr-2" />
+                      <p>Dashboard</p>
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem asChild>
                   <div className="flex" onClick={handleLogout}>
                     <Clipboard className="h-4 w-4 mr-2 text-red-600" />
