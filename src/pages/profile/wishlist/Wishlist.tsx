@@ -107,12 +107,12 @@ const Wishlist = () => {
               className="block"
             >
               <CardHeader className="flex flex-col items-center justify-center p-4">
-                <div className="h-[200px] w-full overflow-hidden rounded-[20px] bg-[#F0EEED] lg:h-[298px] lg:w-[295px]">
+                <div className="aspect-[4/5] w-full max-w-[295px] overflow-hidden rounded-[20px] bg-[#F0EEED]">
                   {product.thumbnail ? (
                     <img
                       src={product.thumbnail}
                       alt={product.title}
-                      className="h-full w-full object-cover object-center"
+                      className="h-full w-full object-contain object-center"
                     />
                   ) : null}
                 </div>

@@ -59,18 +59,19 @@ const HomePage = () => {
     }));
 
   return (
-    <div>
+    <div className="pb-[50%] md:pb-[5%]">
       <Banner />{" "}
-      <div className="bg-black py-[32px] lg:py-[44px] text-center">
+      <div className="overflow-hidden bg-black py-[32px] text-center lg:py-[44px]">
         <Swiper
           key={products.length}
+          className="w-full overflow-hidden"
           modules={[Autoplay]}
           spaceBetween={16}
           slidesPerView={1}
           allowTouchMove={false}
-          speed={3000}
-          loop={true}
-          loopAdditionalSlides={5}
+          speed={4000}
+          loop={products.length > 1}
+          loopAdditionalSlides={2}
           breakpoints={{
             640: { slidesPerView: 2 },
             1024: { slidesPerView: 3 },
@@ -78,7 +79,6 @@ const HomePage = () => {
           autoplay={{
             delay: 0,
             disableOnInteraction: false,
-            waitForTransition: false,
             pauseOnMouseEnter: false,
           }}
         >

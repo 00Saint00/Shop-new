@@ -169,7 +169,7 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="px-4 pt-[80px] pb-[130px] lg:px-[100px]">
+    <div className="px-4 pt-[80px] pb-[50%] md:pb-[15%] lg:px-[100px]">
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
         <div className="w-full shrink-0 lg:w-1/2">
           <div className="flex gap-4">

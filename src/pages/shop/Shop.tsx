@@ -198,7 +198,7 @@ const Shop = () => {
   }
 
   return (
-    <section className="px-[16px] lg:px-[100px] py-16 pb-[130px]">
+    <section className="px-[16px] lg:px-[100px] py-16 pb-[50%] md:pb-[15%]">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-[24px] lg:text-[32px] font-bold lg:mb-0 mb-[8px]">

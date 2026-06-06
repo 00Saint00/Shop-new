@@ -4,57 +4,49 @@ import Wishlist from "./wishlist/Wishlist";
 import EditProfile from "./editProfile/EditProfile";
 import Order from "./orders/Order";
 
+const tabTriggerClass =
+  "flex items-center justify-center gap-2 p-3 text-[14px] font-bold max-md:shrink-0 max-md:rounded-full max-md:px-4 sm:text-[15px] md:w-full md:justify-start md:rounded-md";
+
 const Profile = () => {
   return (
-    <div className="border-r border-gray-200 bg-white g:flex-row px-[16px] lg:px-[100px] pt-[80px] pb-[90%] lg:pb-[168px]">
-      <div className="flex flex-col gap-5">
-        <Tabs defaultValue="profile" orientation="vertical">
-          <TabsList className="flex flex-col gap-2 w-64">
-            <TabsTrigger
-              value="profile"
-              className="flex items-center gap-2 p-3 text-[15px] font-bold"
-            >
-              <User className="w-5 h-5  " />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger
-              value="dashboard"
-              className="flex items-center gap-2 p-3 text-[15px] font-bold"
-            >
-              <Heart className="w-5 h-5 " />
-              Wishlist
-            </TabsTrigger>
-            <TabsTrigger
-              value="orders"
-              className="flex items-center gap-2 p-3 text-[15px] font-bold"
-            >
-              <ListOrdered className="w-5 h-5 " />
-              Orders
-            </TabsTrigger>
-            <TabsTrigger
-              value="settings"
-              className="flex items-center gap-2 p-3 text-[15px] font-bold"
-            >
-              <Settings className="w-5 h-5 " />
-              Settings
-            </TabsTrigger>
-          </TabsList>
+    <div className="bg-white px-[16px] pt-[80px] pb-[60%] md:pb-[15%] md:px-[40px] lg:px-[100px]">
+      <Tabs
+        defaultValue="profile"
+        orientation="vertical"
+        className="flex flex-col gap-6 md:flex-row md:items-start"
+      >
+        <TabsList className="flex h-auto w-full flex-row gap-1 overflow-x-auto rounded-none border-b border-black/10 bg-transparent p-0 pb-2 md:w-64 md:flex-col md:gap-2 md:overflow-visible md:border-b-0 md:pb-0">
+          <TabsTrigger value="profile" className={tabTriggerClass}>
+            <User className="h-5 w-5 shrink-0" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="dashboard" className={tabTriggerClass}>
+            <Heart className="h-5 w-5 shrink-0" />
+            Wishlist
+          </TabsTrigger>
+          <TabsTrigger value="orders" className={tabTriggerClass}>
+            <ListOrdered className="h-5 w-5 shrink-0" />
+            Orders
+          </TabsTrigger>
+          <TabsTrigger value="settings" className={tabTriggerClass}>
+            <Settings className="h-5 w-5 shrink-0" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
 
-          <div className="px-5 w-full">
-            <TabsContent value="profile">
-              <EditProfile />
-            </TabsContent>
-            <TabsContent value="dashboard">
-              <Wishlist />
-            </TabsContent>
-            <TabsContent value="orders">
-              <Order />
-            </TabsContent>
-
-            <TabsContent value="settings">Settings content here</TabsContent>
-          </div>
-        </Tabs>
-      </div>
+        <div className="min-w-0 flex-1 md:px-2">
+          <TabsContent value="profile">
+            <EditProfile />
+          </TabsContent>
+          <TabsContent value="dashboard">
+            <Wishlist />
+          </TabsContent>
+          <TabsContent value="orders">
+            <Order />
+          </TabsContent>
+          <TabsContent value="settings">Settings content here</TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 };

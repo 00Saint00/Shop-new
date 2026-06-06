@@ -22,36 +22,34 @@ const TopSelling = ({ products }: { products: any[] }) => {
     <section className="">
       <h2 className="mb-6 text-2xl font-bold lg:text-[50px]">Top Selling</h2>
 
-      <div className="">
+      <div className="w-full overflow-hidden">
         <Swiper
+          className="w-full overflow-hidden"
           modules={[Autoplay]}
-          spaceBetween={24}
+          spaceBetween={16}
           slidesPerView={1}
-          allowTouchMove={true}
-          speed={3000}
-          loop
-          loopAdditionalSlides={5}
+          allowTouchMove
+          speed={600}
+          loop={(products ?? []).length > 1}
+          loopAdditionalSlides={2}
           breakpoints={{
-            640: { slidesPerView: 2 },
-            1024: { slidesPerView: 4 },
+            640: { slidesPerView: 2, spaceBetween: 24 },
+            1024: { slidesPerView: 4, spaceBetween: 24 },
           }}
           autoplay={{
-            delay: 0,
-            disableOnInteraction: true,
-            waitForTransition: false,
-            pauseOnMouseEnter: false,
-            reverseDirection: true,
+            delay: 4000,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
           }}
-          
         >
           {(products ?? []).map((product) => {
             const productHref = `/product/${product.id}/${slugify(product.title)}`;
             return (
-              <SwiperSlide key={product.id}>
-                <Card className="overflow-hidden">
+              <SwiperSlide key={product.id} className="!h-auto">
+                <Card className="h-full overflow-hidden">
                   <Link to={productHref} className="block">
                     <CardHeader className="flex flex-col items-center justify-center p-4">
-                      <div className="h-[200px] w-full overflow-hidden rounded-[20px] bg-[#F0EEED] lg:h-[298px] lg:w-[295px]">
+                      <div className="aspect-[4/5] w-full max-w-[295px] overflow-hidden rounded-[20px] bg-[#F0EEED]">
                         <img
                           src={product.images?.[0] ?? product.image ?? ""}
                           alt={product.title ?? "Product"}
