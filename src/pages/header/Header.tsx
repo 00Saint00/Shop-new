@@ -26,6 +26,7 @@ import { supabase } from "@/lib/supabase";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "@/store/Store";
 import { logout } from "@/store/slice/authSlice";
+import { useCart } from "@/context/CartContext";
 
 const SHOP_SEARCH_PATH =
   /^\/shop\/?$|^\/shop\/(top-selling|new-arrivals|a-z|z-a)$|^\/shop\/brand\/[^/]+$/;
@@ -37,6 +38,8 @@ const Header = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
+  const { cartItems } = useCart();
+  console.log(cartItems);
 
   useEffect(() => {
     if (SHOP_SEARCH_PATH.test(location.pathname)) {
@@ -153,13 +156,21 @@ const Header = () => {
 
         <div className="flex items-center gap-[14px]">
           <div className="relative">
-            <ShoppingCart className="h-[24px] w-[24px]" />
+            <ShoppingCart
+              className="h-[24px] w-[24px] cursor-pointer hover:text-gray-500 transition-colors"
+              onClick={() => navigate("/cart")}
+            />
+            {cartItems.length > 0 && (
+              <span className="absolute top-0 right-[-10px] bg-red-500 text-white text-xs rounded-full px-2 py-1 w-4 h-4 flex items-center justify-center text-center text-xs font-medium">
+                {cartItems.reduce((acc, item) => acc + item.quantity, 0)}
+              </span>
+            )}
           </div>
 
           {user && !hideSignedInChrome ? (
             <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-1 focus:outline-none cursor-pointer">
+                <div className="flex items-center gap-1 focus:outline-none cursor-pointer hover:text-gray-500 transition-colors">
                   {/* <CircleUser className="h-[24px] w-[24px]" /> */}
 
                   {userProfile?.avatar ? (
@@ -225,7 +236,7 @@ const Header = () => {
             <div>
               <Link
                 to="/auth"
-                className="flex items-center gap-2 px-2 py-1 hover:text-blue-600"
+                className="flex items-center gap-2 px-2 py-1 hover:text-gray-500 transition-colors cursor-pointer"
               >
                 <CircleUser className="h-[24px] w-[24px]" />
               </Link>

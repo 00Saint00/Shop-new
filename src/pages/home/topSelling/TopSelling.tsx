@@ -40,7 +40,9 @@ const TopSelling = ({ products }: { products: any[] }) => {
             disableOnInteraction: true,
             waitForTransition: false,
             pauseOnMouseEnter: false,
+            reverseDirection: true,
           }}
+          
         >
           {(products ?? []).map((product) => {
             const productHref = `/product/${product.id}/${slugify(product.title)}`;

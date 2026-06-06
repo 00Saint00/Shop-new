@@ -29,6 +29,9 @@ import Fragrances from "./pages/shop/fragrances/Fragrances";
 import Brands from "./pages/brands/Brands";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import { Cart } from "./pages/cart/Cart";
+import Checkout from "./pages/checkout/Checkout";
+import CheckoutConfirmation from "./pages/checkout/CheckoutConfirmation";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -155,11 +158,18 @@ function App() {
           <Route path="/shop/fragrances" element={<Fragrances />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/shop/:sortBy" element={<Shop />} />
+          <Route path="/cart" element={<Cart />} />
           <Route path="/brands" element={<Brands />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          {/* Private routes: require login; guests are redirected to /auth */}
           <Route element={<AuthRoute type="private" />}>
             <Route path="/profile" element={<Profile />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route
+              path="/checkout/confirmation/:orderId"
+              element={<CheckoutConfirmation />}
+            />
           </Route>
         </Routes>
 

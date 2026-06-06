@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 
 function ProductDetailSkeleton() {
   return (
@@ -102,9 +103,9 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [retryKey, setRetryKey] = useState(0);
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const { addToCart } = useCart();
   const productIdNum = id ? Number(id) : NaN;
-  const listed =
-    Number.isFinite(productIdNum) && isWishlisted(productIdNum);
+  const listed = Number.isFinite(productIdNum) && isWishlisted(productIdNum);
 
   const fetchProduct = useCallback(async () => {
     if (!id) return;
@@ -234,9 +235,7 @@ const ProductDetail = () => {
                 aria-label={`${listed ? "Remove from wishlist" : "Add to wishlist"} ${product.title ?? "product"}`}
                 className={[
                   "-m-1 rounded-full p-1 transition-colors hover:bg-black/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-black/20",
-                  listed
-                    ? "text-red-500"
-                    : "text-black/35 hover:text-red-500",
+                  listed ? "text-red-500" : "text-black/35 hover:text-red-500",
                 ].join(" ")}
                 onClick={(e) => {
                   handleWishlist();
@@ -337,9 +336,18 @@ const ProductDetail = () => {
               </button>
             </div>
             <Button
-              className="h-12 w-full rounded-full bg-black text-white transition-colors hover:bg-black/90 lg:h-14"
+              className="h-12 w-full rounded-full bg-black text-white transition-colors hover:bg-black/70 lg:h-14 cursor-pointer"
               onClick={() => {
-                toast.success("Item added to cart!");
+                if (!Number.isFinite(productIdNum)) return;
+                void addToCart(productIdNum, quantity, {
+                  title: product.title as string,
+                  price: Number(product.price),
+                  thumbnail:
+                    (product.thumbnail ??
+                      product.images?.[0] ??
+                      product.image ??
+                      null) as string | null,
+                });
               }}
             >
               Add to Cart

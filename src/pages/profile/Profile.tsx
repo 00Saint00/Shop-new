@@ -1,8 +1,9 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, User, Settings,Heart } from "lucide-react";
+import { Home, User, Settings,Heart, ListOrdered } from "lucide-react";
 import Wishlist from "./wishlist/Wishlist";
 import EditProfile from "./editProfile/EditProfile";
+import Order from "./orders/Order";
 
 const Profile = () => {
   return (
@@ -25,6 +26,13 @@ const Profile = () => {
               Wishlist
             </TabsTrigger>
             <TabsTrigger
+              value="orders"
+              className="flex items-center gap-2 p-3 text-[15px] font-bold"
+            >
+              <ListOrdered className="w-5 h-5 " />
+              Orders
+            </TabsTrigger>
+            <TabsTrigger
               value="settings"
               className="flex items-center gap-2 p-3 text-[15px] font-bold"
             >
@@ -40,6 +48,10 @@ const Profile = () => {
             <TabsContent value="dashboard">
               <Wishlist />
             </TabsContent>
+            <TabsContent value="orders">
+              <Order />
+            </TabsContent>
+
             <TabsContent value="settings">Settings content here</TabsContent>
           </div>
         </Tabs>
