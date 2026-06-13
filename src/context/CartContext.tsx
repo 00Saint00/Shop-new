@@ -87,7 +87,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .from("cart_items")
         .select("id, quantity")
         .eq("user_id", user.id)
-        .eq("product_id", productId);
+        .eq("product_id", pid);
       if (item?.size) {
         query = query.eq("size", item.size);
       } else {
