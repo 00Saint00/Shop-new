@@ -27,7 +27,11 @@ type CartContextValue = {
     quantity?: number,
     item?: Partial<CartItem>,
   ) => Promise<void>;
-  removeFromCart: (productId: number, item?: Partial<CartItem>, removeAll?: boolean) => Promise<void>;
+  removeFromCart: (
+    productId: number,
+    item?: Partial<CartItem>,
+    removeAll?: boolean,
+  ) => Promise<void>;
   clearCart: () => Promise<void>;
 };
 
@@ -143,13 +147,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .from("cart_items")
         .select("id, quantity")
         .eq("user_id", user.id)
-        .eq("product_id", productId);
+        .eq("product_id", pid);
 
-        if(item?.size){
-          query = query.eq("size", item.size);
-        } else {
-          query = query.is("size", null);
-        }
+      if (item?.size) {
+        query = query.eq("size", item.size);
+      } else {
+        query = query.is("size", null);
+      }
 
       const { data: row } = await query.maybeSingle();
 
