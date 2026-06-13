@@ -7,16 +7,16 @@ export const Cart = () => {
   const { cartItems, addToCart, removeFromCart, clearCart } = useCart();
 
   const navigate = useNavigate();
-  const handleIncrease = (productId: number) => {
-    void addToCart(productId, 1);
+  const handleIncrease = (productId: number, size: string | null) => {
+    void addToCart(productId, 1, { size });
   };
 
-  const handleDecrease = (productId: number) => {
-    void removeFromCart(productId);
+  const handleDecrease = (productId: number, size: string | null) => {
+    void removeFromCart(productId, { size });
   };
 
-  const handleRemoveItem = (productId: number) => {
-    void removeFromCart(productId, true);
+  const handleRemoveItem = (productId: number, size: string | null) => {
+    void removeFromCart(productId, { size }, true);
   };
 
   const handleClear = () => {
@@ -60,7 +60,7 @@ export const Cart = () => {
             <div className="space-y-4">
               {cartItems.map((item, index) => (
                 <div
-                  key={item.product_id}
+                  key={item.product_id + (item.size ?? "")}
                   className={[
                     "flex flex-col gap-4 py-2 sm:flex-row sm:items-center sm:justify-between",
                     index !== cartItems.length - 1
@@ -84,6 +84,9 @@ export const Cart = () => {
                       <p className="mt-1 text-sm text-black/60">
                         Qty: {item.quantity}
                       </p>
+                      <p className="mt-1 text-sm text-black/60">
+                        Size: {item.size}
+                      </p>
                     </div>
                   </div>
 
@@ -98,7 +101,7 @@ export const Cart = () => {
                       <button
                         type="button"
                         className="flex h-8 w-8 items-center justify-center rounded-full text-base text-black transition-colors hover:bg-black hover:text-white cursor-pointer"
-                        onClick={() => handleDecrease(item.product_id)}
+                        onClick={() => handleDecrease(item.product_id, item.size)}
                         aria-label="Decrease quantity"
                       >
                         -
@@ -109,7 +112,7 @@ export const Cart = () => {
                       <button
                         type="button"
                         className="flex h-8 w-8 items-center justify-center rounded-full text-base text-black transition-colors hover:bg-black hover:text-white cursor-pointer"
-                        onClick={() => handleIncrease(item.product_id)}
+                        onClick={() => handleIncrease(item.product_id, item.size)}
                         aria-label="Increase quantity"
                       >
                         +
@@ -119,7 +122,7 @@ export const Cart = () => {
                     <button
                       type="button"
                       className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-black/60 transition-colors hover:border-red-600 hover:bg-red-600 hover:text-white cursor-pointer"
-                      onClick={() => handleRemoveItem(item.product_id)}
+                      onClick={() => handleRemoveItem(item.product_id, item.size)}
                       aria-label="Remove item"
                     >
                       <Trash2 className="h-4 w-4" />

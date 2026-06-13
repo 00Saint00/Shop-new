@@ -1,6 +1,6 @@
 # Shop.co
 
-Fashion and general merchandise storefront built with React. Product data comes from the [DummyJSON](https://dummyjson.com/docs/products) demo API. Authentication, cart, wishlist, checkout, and orders use [Supabase](https://supabase.com/).
+Fashion and general merchandise storefront built with React. Product data comes from the [DummyJSON](https://dummyjson.com/docs/products) demo API. Authentication, cart, wishlist, checkout, orders, and product reviews use [Supabase](https://supabase.com/).
 
 ## Tech stack
 
@@ -20,7 +20,8 @@ Fashion and general merchandise storefront built with React. Product data comes 
 - **Shop by brand** (`/shop/brand/:brandSlug`) — Same shop UI filtered to one brand; links from the Brands page.
 - **Category browsing** — Men, Women, Electronics, and Fragrances use a shared `CategoryShop` component: one catalog fetch, then filter by DummyJSON `category` slugs.
 - **Brands** (`/brands`) — Lists brands with product counts, client-side name filter, links into brand-filtered shop.
-- **Product detail** (`/product/:id/:slug`) — Gallery, ratings, size UI, quantity (min 1, max stock when available), add-to-cart, loading skeletons and retry on error.
+- **Product detail** (`/product/:id/:slug`) — Gallery, ratings, size UI, quantity (min 1, max stock when available), add-to-cart, loading skeleton, and retry on error. **Ratings and Reviews** tab: logged-in users can post or update a review (stored in Supabase); star average uses user reviews when present, otherwise DummyJSON sample rating.
+- **Mobile nav** — Hamburger menu (below `sm`) with shop links and search; desktop nav and search unchanged.
 - **Cart** (`/cart`) — Logged-in users persist cart lines in Supabase (`cart_items`). **`CartProvider`** loads on login and clears on logout. Header cart icon links to `/cart` with a quantity badge.
 - **Checkout** (`/checkout`, private route) — Shipping form with profile prefill, Photon address validation (user must pick a suggestion), places an unpaid order (`status: pending`). Clears cart and redirects to confirmation.
 - **Checkout confirmation** (`/checkout/confirmation/:orderId`) — Shows order summary and line items.
@@ -42,7 +43,7 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Without valid Supabase values, auth, cart, wishlist, checkout, and orders will not work; catalog pages that only use DummyJSON can still be browsed.
+Without valid Supabase values, auth, cart, wishlist, checkout, orders, and reviews will not work; catalog pages that only use DummyJSON can still be browsed.
 
 ### Supabase tables (RLS required)
 
@@ -55,6 +56,19 @@ Without valid Supabase values, auth, cart, wishlist, checkout, and orders will n
 | **`orders`** | `user_id`, `status`, `subtotal`, `total`, shipping fields |
 | **`order_items`** | `order_id`, `product_id`, `title`, `price`, `quantity`, `thumbnail` |
 | **`seller`** | Seller application / store info; `status`: `pending`, `approved`, or `rejected` |
+| **`product_reviews`** | User reviews: `user_id`, `product_id` (DummyJSON id as text), `rating` (1–5), optional `comment`, `reviewer_name`, timestamps. Unique on `(user_id, product_id)`. |
+
+**`product_reviews` RLS (typical setup):**
+
+- **SELECT** — public read (`using (true)`)
+- **INSERT** — authenticated user, `user_id = auth.uid()`
+- **UPDATE / DELETE** — own row only (`auth.uid() = user_id`)
+
+After adding or altering columns, reload the API schema if Supabase reports a schema-cache error:
+
+```sql
+notify pgrst, 'reload schema';
+```
 
 **Storage:** public **`avatars`** bucket with authenticated INSERT/UPDATE (and authenticated SELECT for upsert). Public bucket URLs are used for avatar display.
 
@@ -86,7 +100,7 @@ pnpm test:watch   # Jest in watch mode
 
 ## Project layout (high level)
 
-- `src/pages/` — Route-level screens (home, shop, cart, checkout, auth, profile, admin dashboard, brands, category shops).
+- `src/pages/` — Route-level screens (home, shop, cart, checkout, auth, profile, admin dashboard, brands, category shops, product detail).
 - `src/components/` — Shared UI (header, footer, splash, `address/AddressAutocomplete`, shadcn-style `ui/*`).
 - `src/context/` — React context providers (`CartContext`, `WishlistContext`).
 - `src/store/` — Redux store and `authSlice`.

@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -7,53 +6,20 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Heart } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
+import { toast } from "sonner";
+import ProductDetailSkeleton from "./ProductDetailSkeleton";
+import { supabase } from "@/lib/supabase";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/Store";
 
-function ProductDetailSkeleton() {
-  return (
-    <div
-      className="px-4 pt-[80px] pb-[130px] lg:px-[100px]"
-      aria-busy="true"
-      aria-label="Loading product"
-    >
-      <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
-        <div className="flex w-full shrink-0 gap-4 lg:w-1/2">
-          <div className="hidden w-20 flex-col gap-3 lg:flex">
-            <Skeleton className="aspect-square w-full rounded-lg" />
-            <Skeleton className="aspect-square w-full rounded-lg" />
-            <Skeleton className="aspect-square w-full rounded-lg" />
-          </div>
-          <Skeleton className="aspect-square w-full rounded-xl" />
-        </div>
-        <div className="flex w-full flex-col justify-center gap-3 lg:w-1/2">
-          <Skeleton className="h-9 w-full max-w-lg lg:h-10" />
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="mt-1 h-8 w-28" />
-          <Skeleton className="mt-4 h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/5 max-w-xl" />
-          <div className="mt-4 flex gap-2 border-t border-transparent pt-4">
-            <Skeleton className="h-10 w-12 rounded-full" />
-            <Skeleton className="h-10 w-12 rounded-full" />
-            <Skeleton className="h-10 w-12 rounded-full" />
-            <Skeleton className="h-10 w-12 rounded-full" />
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-4 border-t border-transparent pt-4">
-            <Skeleton className="h-12 rounded-full lg:h-14" />
-            <Skeleton className="h-12 rounded-full lg:h-14" />
-          </div>
-        </div>
-      </div>
-      <div className="mt-10 space-y-4">
-        <div className="flex flex-wrap gap-4 py-5">
-          <Skeleton className="h-10 w-36" />
-          <Skeleton className="h-10 w-44" />
-          <Skeleton className="h-10 w-24" />
-        </div>
-        <Skeleton className="h-40 w-full max-w-3xl rounded-lg" />
-      </div>
-    </div>
-  );
-}
+type ProductReviewRow = {
+  id: string;
+  user_id: string;
+  rating: number;
+  comment: string | null;
+  reviewer_name: string | null;
+  created_at: string;
+};
 
 function ProductDetailError({
   message,
@@ -102,8 +68,36 @@ const ProductDetail = () => {
   const [retryKey, setRetryKey] = useState(0);
   const { isWishlisted, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const profile = useSelector((state: RootState) => state.auth.profile);
   const productIdNum = id ? Number(id) : NaN;
   const listed = Number.isFinite(productIdNum) && isWishlisted(productIdNum);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<ProductReviewRow[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
+  const [draftRating, setDraftRating] = useState(5);
+  const [draftComment, setDraftComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const fetchReviews = useCallback(async () => {
+    if (!id) return;
+    setReviewsLoading(true);
+    setReviewsError(null);
+
+    const { data, error } = await supabase
+      .from("product_reviews")
+      .select("id, rating, comment, user_id, reviewer_name, created_at")
+      .eq("product_id", String(id))
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setReviewsError(error.message);
+      setReviews([]);
+    } else {
+      setReviews((data ?? []) as ProductReviewRow[]);
+    }
+    setReviewsLoading(false);
+  }, [id]);
 
   const fetchProduct = useCallback(async () => {
     if (!id) return;
@@ -128,7 +122,98 @@ const ProductDetail = () => {
 
   useEffect(() => {
     setQuantity(1);
+    setSelectedSize(null);
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    void fetchReviews();
+  }, [id, fetchReviews]);
+
+  const ownReview = useMemo(
+    () => reviews.find((review) => review.user_id === profile?.id) ?? null,
+    [reviews, profile?.id],
+  );
+
+  useEffect(() => {
+    if (ownReview) {
+      setDraftRating(ownReview.rating);
+      setDraftComment(ownReview.comment ?? "");
+    } else {
+      setDraftRating(5);
+      setDraftComment("");
+    }
+  }, [ownReview?.id, ownReview?.rating, ownReview?.comment]);
+
+  const displayRating = useMemo(() => {
+    if (reviews.length > 0) {
+      return reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    }
+    return Number(product?.rating ?? 0);
+  }, [reviews, product?.rating]);
+
+  const handleSubmitReview = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user?.id || !id) {
+      toast.error("Please log in to leave a review");
+      return;
+    }
+
+    const reviewerName =
+      profile?.full_name?.trim() ||
+      user.email?.split("@")[0] ||
+      "Customer";
+
+    const payload = {
+      user_id: user.id,
+      product_id: String(id),
+      rating: draftRating,
+      comment: draftComment.trim() || null,
+      reviewer_name: reviewerName,
+    };
+
+    setSubmittingReview(true);
+
+    let saveError: { message: string } | null = null;
+
+    if (ownReview) {
+      const { error } = await supabase
+        .from("product_reviews")
+        .update({
+          rating: payload.rating,
+          comment: payload.comment,
+          reviewer_name: payload.reviewer_name,
+        })
+        .eq("id", ownReview.id)
+        .eq("user_id", user.id);
+      saveError = error;
+    } else {
+      const { error } = await supabase.from("product_reviews").insert(payload);
+      saveError = error;
+    }
+
+    setSubmittingReview(false);
+
+    if (saveError) {
+      console.error("Review save error:", saveError);
+      toast.error(saveError.message || "Could not save your review");
+      return;
+    }
+
+    toast.success(ownReview ? "Review updated" : "Review posted");
+    void fetchReviews();
+  };
+
+  const reviewAuthor = (review: ProductReviewRow) => {
+    if (review.reviewer_name?.trim()) return review.reviewer_name;
+    if (review.user_id === profile?.id && profile?.full_name?.trim()) {
+      return profile.full_name;
+    }
+    return "Customer";
+  };
 
   const handleRetry = () => setRetryKey((k) => k + 1);
 
@@ -219,7 +304,7 @@ const ProductDetail = () => {
                   <span
                     key={i}
                     className={
-                      i < Math.round(product.rating)
+                      i < Math.round(displayRating)
                         ? "text-yellow-400"
                         : "text-gray-300"
                     }
@@ -247,18 +332,14 @@ const ProductDetail = () => {
                   strokeWidth={1.75}
                 />
               </button>
-              {/* <Heart
-                className={[
-                  "h-4 w-4 shrink-0 transition-colors",
-                  listed ? "fill-red-500 text-red-500" : "text-black/35",
-                ].join(" ")}
-                strokeWidth={1.75}
-                aria-hidden
-                onClick={handleWishlist}
-              /> */}
             </div>
             <p className="text-sm font-semibold">
-              {Math.round(product.rating)} /5 stars
+              {displayRating.toFixed(1)} /5 stars
+              {reviews.length > 0 ? (
+                <span className="ml-1 font-normal text-black/50">
+                  ({reviews.length})
+                </span>
+              ) : null}
             </p>
           </div>
           <div className="mt-3">
@@ -273,38 +354,24 @@ const ProductDetail = () => {
               choose size
             </p>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="rounded-full border-black/10 bg-white px-8 py-3 font-normal text-black transition-colors hover:bg-black hover:text-white cursor-pointer"
-              >
-                {" "}
-                S{" "}
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-full border-black/10 bg-white px-8 py-3 font-normal text-black transition-colors hover:bg-black hover:text-white cursor-pointer"
-              >
-                {" "}
-                M{" "}
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-full border-black/10 bg-white px-8 py-3 font-normal text-black transition-colors hover:bg-black hover:text-white cursor-pointer"
-              >
-                {" "}
-                L{" "}
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-full border-black/10 bg-white px-8 py-3 font-normal text-black transition-colors hover:bg-black hover:text-white cursor-pointer"
-              >
-                {" "}
-                XL{" "}
-              </Button>
+              {(["S", "M", "L", "XL"] as const).map((size) => (
+                <Button
+                  key={size}
+                  variant="outline"
+                  className={[
+                    "rounded-full border px-8 py-3 font-normal transition-colors cursor-pointer",
+                    selectedSize === size
+                      ? "border-black bg-black text-white"
+                      : "border-black/10 bg-white text-black hover:bg-black hover:text-white",
+                  ].join(" ")}
+                  onClick={() => setSelectedSize(size)}
+                >
+                  {size}
+                </Button>
+              ))}
             </div>
           </div>
 
-          {/* add to cart and quantity section */}
           <div className="mt-6 grid grid-cols-2 gap-4 border-t border-black/10 pt-4">
             <div className="flex h-12 min-w-0 items-center justify-center gap-2 rounded-full border border-black/10 bg-[#F0F0F0] lg:h-14 lg:gap-4">
               <button
@@ -336,15 +403,19 @@ const ProductDetail = () => {
             <Button
               className="h-12 w-full rounded-full bg-black text-white transition-colors hover:bg-black/70 lg:h-14 cursor-pointer"
               onClick={() => {
+                if (!selectedSize) {
+                  toast.error("Please select a size");
+                  return;
+                }
                 if (!Number.isFinite(productIdNum)) return;
                 void addToCart(productIdNum, quantity, {
                   title: product.title as string,
                   price: Number(product.price),
-                  thumbnail:
-                    (product.thumbnail ??
-                      product.images?.[0] ??
-                      product.image ??
-                      null) as string | null,
+                  thumbnail: (product.thumbnail ??
+                    product.images?.[0] ??
+                    product.image ??
+                    null) as string | null,
+                  size: selectedSize,
                 });
               }}
             >
@@ -377,7 +448,6 @@ const ProductDetail = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* product details content */}
           <div className="mt-4">
             <TabsContent value="prouctDetails">
               <div>
@@ -400,22 +470,72 @@ const ProductDetail = () => {
               </div>
             </TabsContent>
             <TabsContent value="ratingsAndReviews">
-              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                {(product.reviews ?? []).map((review: any, i: number) => {
-                  const rating = Math.min(
-                    5,
-                    Math.max(0, Number(review.rating) ?? 0),
-                  );
-                  const dateStr = review.date
-                    ? new Date(review.date).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })
-                    : "";
-                  return (
+              <div className="mb-8 rounded-[20px] border border-black/10 bg-[#FAFAFA] p-5">
+                <p className="text-base font-bold text-black">
+                  {ownReview ? "Update your review" : "Write a review"}
+                </p>
+                {profile?.id ? (
+                  <div className="mt-4 space-y-4">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          aria-label={`Rate ${star} out of 5`}
+                          className="rounded p-1 text-2xl"
+                          onClick={() => setDraftRating(star)}
+                        >
+                          <span
+                            className={
+                              star <= draftRating
+                                ? "text-yellow-400"
+                                : "text-gray-300"
+                            }
+                          >
+                            &#9733;
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={draftComment}
+                      onChange={(e) => setDraftComment(e.target.value)}
+                      placeholder="Comment (optional)"
+                      className="w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                    />
+                    <Button
+                      type="button"
+                      disabled={submittingReview}
+                      onClick={() => void handleSubmitReview()}
+                      className="rounded-full bg-black text-white hover:bg-black/80"
+                    >
+                      {submittingReview
+                        ? "Saving..."
+                        : ownReview
+                          ? "Update review"
+                          : "Post review"}
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-black/60">
+                    <Link to="/auth" className="font-medium text-black underline">
+                      Log in
+                    </Link>{" "}
+                    to leave a review.
+                  </p>
+                )}
+              </div>
+
+              {reviewsLoading ? (
+                <p className="text-sm text-black/60">Loading reviews...</p>
+              ) : reviewsError ? (
+                <p className="text-sm text-red-500">{reviewsError}</p>
+              ) : reviews.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {reviews.map((review) => (
                     <div
-                      key={i}
+                      key={review.id}
                       className="rounded-lg border border-black/10 bg-white p-4"
                     >
                       <div className="mb-2 flex gap-0.5">
@@ -423,7 +543,7 @@ const ProductDetail = () => {
                           <span
                             key={star}
                             className={
-                              star <= rating
+                              star <= review.rating
                                 ? "text-yellow-400"
                                 : "text-gray-300"
                             }
@@ -433,24 +553,26 @@ const ProductDetail = () => {
                         ))}
                       </div>
                       <p className="font-semibold text-foreground">
-                        {review.reviewerName ?? "Anonymous"}
+                        {reviewAuthor(review)}
                       </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {review.comment ?? ""}
-                      </p>
-                      {dateStr && (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          Posted on {dateStr}
+                      {review.comment ? (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {review.comment}
                         </p>
-                      )}
+                      ) : null}
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Posted on{" "}
+                        {new Date(review.created_at).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
-              {(product.reviews ?? []).length === 0 && (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  No reviews yet.
-                </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No reviews yet.</p>
               )}
             </TabsContent>
             <TabsContent value="faqs">
@@ -460,9 +582,9 @@ const ProductDetail = () => {
                     {faq.question}
                   </p>
                 ))}
-                {(product.faqs ?? []).length === 0 && (
+                {(product.faqs ?? []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">No FAQs yet.</p>
-                )}
+                ) : null}
               </div>
             </TabsContent>
           </div>

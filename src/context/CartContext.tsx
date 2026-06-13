@@ -17,6 +17,7 @@ type CartItem = {
   title: string;
   price: number;
   thumbnail: string | null;
+  size: string | null;
 };
 
 type CartContextValue = {
@@ -26,7 +27,7 @@ type CartContextValue = {
     quantity?: number,
     item?: Partial<CartItem>,
   ) => Promise<void>;
-  removeFromCart: (productId: number, removeAll?: boolean) => Promise<void>;
+  removeFromCart: (productId: number, item?: Partial<CartItem>, removeAll?: boolean) => Promise<void>;
   clearCart: () => Promise<void>;
 };
 
@@ -41,8 +42,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const loadCart = useCallback(async (userId: string) => {
     const { data } = await supabase
-      .from("cart_items") 
-      .select("product_id, quantity, title, price, thumbnail")
+      .from("cart_items")
+      .select("product_id, quantity, title, price, thumbnail, size")
       .eq("user_id", userId)
       .order("product_id", { ascending: true });
     setCartItems(
@@ -52,6 +53,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         title: r.title,
         price: Number(r.price),
         thumbnail: r.thumbnail,
+        size: r.size,
       })),
     );
   }, []);
@@ -73,12 +75,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const q = Math.max(1, Math.floor(quantity));
       const pid = String(productId);
-      const { data: row } = await supabase
+      // const { data: row } = await supabase
+      //   .from("cart_items")
+      //   .select("id, quantity, title, price, thumbnail, size")
+      //   .eq("user_id", user.id)
+      //   .eq("product_id", pid)
+      //   .eq("size", item?.size)
+      //   .maybeSingle(); // check if the item is already in the cart
+
+      let query = supabase
         .from("cart_items")
-        .select("id, quantity, title, price, thumbnail")
+        .select("id, quantity")
         .eq("user_id", user.id)
-        .eq("product_id", pid)
-        .maybeSingle();
+        .eq("product_id", productId);
+      if (item?.size) {
+        query = query.eq("size", item.size);
+      } else {
+        query = query.is("size", null);
+      }
+
+      const { data: row } = await query.maybeSingle();
 
       if (row?.id) {
         const { error } = await supabase
@@ -97,6 +113,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           title: item?.title,
           price: item?.price,
           thumbnail: item?.thumbnail,
+          size: item?.size,
         });
         if (error) {
           toast.error("Couldn't add to cart");
@@ -111,15 +128,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const removeFromCart = useCallback(
-    async (productId: number, removeAll = false) => {
+    async (productId: number, item?: Partial<CartItem>, removeAll = false) => {
       if (!user?.id) return;
       const pid = String(productId);
-      const { data: row } = await supabase
+      // const { data: row } = await supabase
+      //   .from("cart_items")
+      //   .select("id, quantity, title, price, thumbnail, size")
+      //   .eq("user_id", user.id)
+      //   .eq("product_id", pid)
+
+      //   .maybeSingle();
+
+      let query = supabase
         .from("cart_items")
-        .select("id, quantity, title, price, thumbnail")
+        .select("id, quantity")
         .eq("user_id", user.id)
-        .eq("product_id", pid)
-        .maybeSingle();
+        .eq("product_id", productId);
+
+        if(item?.size){
+          query = query.eq("size", item.size);
+        } else {
+          query = query.is("size", null);
+        }
+
+      const { data: row } = await query.maybeSingle();
 
       if (!row?.id) return;
 

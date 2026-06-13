@@ -21,6 +21,7 @@ type OrderItemRow = {
   price: number;
   quantity: number;
   thumbnail: string | null;
+  size: string | null;
 };
 
 const CheckoutConfirmation = () => {
@@ -53,7 +54,7 @@ const CheckoutConfirmation = () => {
 
       const { data: itemRows } = await supabase
         .from("order_items")
-        .select("title, price, quantity, thumbnail")
+        .select("title, price, quantity, thumbnail, size")
         .eq("order_id", orderId);
 
       setOrder(orderRow as OrderRow);
@@ -111,11 +112,11 @@ const CheckoutConfirmation = () => {
           <p className="font-semibold text-black">Items</p>
           {items.map((item, index) => (
             <div
-              key={`${item.title}-${index}`}
+              key={`${item.title}-${item.size}-${index}`}
               className="flex items-center justify-between text-sm"
             >
               <span className="text-black">
-                {item.title} × {item.quantity}
+                {item.title} × {item.quantity} {item.size ? `(${item.size})` : ""}
               </span>
               <span className="font-medium text-black">
                 ${(Number(item.price) * Number(item.quantity)).toFixed(2)}

@@ -137,7 +137,7 @@ const EditProfile = () => {
   const handleSellerSave = async () => {
     if (!profile) return;
 
-    const { id, store_name, contact_number } = formData;
+    const { id, store_name, contact_number, store_description, business_address } = formData;
 
     const { data: sellersData, error: sellerError } = await supabase
       .from("seller")
@@ -150,6 +150,8 @@ const EditProfile = () => {
             | "pending"
             | "approved"
             | "rejected",
+          store_description: store_description ?? null,
+          business_address: business_address ?? null,
         },
         { onConflict: "id" },
       )

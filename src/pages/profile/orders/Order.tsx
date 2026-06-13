@@ -11,6 +11,7 @@ type OrderItemRow = {
   quantity: number;
   thumbnail: string | null;
   order_id: string;
+  size: string | null;
 };
 
 type OrderWithItems = {
@@ -64,7 +65,7 @@ const Order = () => {
       const orderIds = rows.map((row) => row.id);
       const { data: itemRows, error: itemsError } = await supabase
         .from("order_items")
-        .select("id, title, product_id, price, quantity, thumbnail, order_id")
+        .select("id, title, product_id, price, quantity, thumbnail, order_id, size")
         .in("order_id", orderIds);
 
       if (itemsError) {
@@ -157,7 +158,7 @@ const Order = () => {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((item) => (
                   <div
-                    key={item.id}
+                    key={item.id + (item.size ?? "")}
                     className="flex gap-3 rounded-xl border border-black/10 p-3"
                   >
                     <img
@@ -172,6 +173,9 @@ const Order = () => {
                       <p className="font-semibold text-black">{itemLabel(item)}</p>
                       <p className="mt-1 text-sm text-black/60">
                         Qty: {item.quantity}
+                      </p>
+                      <p className="mt-1 text-sm text-black/60">
+                        Size: {item.size}
                       </p>
                       <p className="mt-1 text-sm font-medium text-black">
                         ${(Number(item.price) * Number(item.quantity)).toFixed(2)}

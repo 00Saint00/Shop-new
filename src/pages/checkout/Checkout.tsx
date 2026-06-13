@@ -89,6 +89,7 @@ const Checkout = () => {
       price: item.price,
       quantity: item.quantity,
       thumbnail: item.thumbnail,
+      size: item.size,
     }));
 
     const { error: itemsError } = await supabase
@@ -130,7 +131,7 @@ const Checkout = () => {
             <div className="mt-5 space-y-4">
               {cartItems.map((item, index) => (
                 <div
-                  key={item.product_id}
+                  key={`${item.product_id}-${item.size}`}
                   className={[
                     "flex flex-col gap-4 py-2 sm:flex-row sm:items-center sm:justify-between",
                     index !== cartItems.length - 1
@@ -156,6 +157,9 @@ const Checkout = () => {
                       </p>
                       <p className="mt-1 text-sm text-black/60">
                         Qty: {item.quantity}
+                      </p>
+                      <p className="mt-1 text-sm text-black/60">
+                        Size: {item.size}
                       </p>
                     </div>
                   </div>

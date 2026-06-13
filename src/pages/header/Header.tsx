@@ -1,10 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   Link,
   useLocation,
@@ -21,6 +28,7 @@ import {
   User,
   ClipboardCheck,
   ShoppingCart,
+  Menu,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSelector, useDispatch } from "react-redux";
@@ -31,15 +39,36 @@ import { useCart } from "@/context/CartContext";
 const SHOP_SEARCH_PATH =
   /^\/shop\/?$|^\/shop\/(top-selling|new-arrivals|a-z|z-a)$|^\/shop\/brand\/[^/]+$/;
 
+const MOBILE_NAV_LINKS = [
+  { to: "/", label: "Home" },
+  { to: "/shop/men", label: "Men" },
+  { to: "/shop/women", label: "Women" },
+  { to: "/shop/electronics", label: "Electronics" },
+  { to: "/shop/fragrances", label: "Fragrances" },
+  { to: "/shop/new-arrivals", label: "New Arrival" },
+  { to: "/brands", label: "Brands" },
+] as const;
+
 const Header = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [searchDraft, setSearchDraft] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
   const { cartItems } = useCart();
-  console.log(cartItems);
+
+  const handleSearchSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const q = searchDraft.trim();
+    if (q) {
+      navigate(`/shop?q=${encodeURIComponent(q)}`);
+    } else {
+      navigate("/shop");
+    }
+    setMobileMenuOpen(false);
+  };
 
   useEffect(() => {
     if (SHOP_SEARCH_PATH.test(location.pathname)) {
@@ -71,15 +100,66 @@ const Header = () => {
   return (
     <header className="flex justify-between items-center lg:px-[100px] px-[16px] bg-white shadow-sm relative z-50">
       <div className="flex justify-between items-center w-full lg:py-[24px] py-[12px]">
-        {/* Logo */}
-        <Link to="/">
-          <img
-            src={Logo}
-            alt="Logo"
-            className="h-[22px] w-[140px]"
-            loading="eager"
-          />
-        </Link>
+        <div className="flex items-center gap-[14px]">
+          {/* mobile nav */}
+          <div className="sm:hidden">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Open menu"
+                  className="flex cursor-pointer items-center justify-center rounded-md p-1 hover:text-gray-500 transition-colors"
+                >
+                  <Menu className="h-[24px] w-[24px]" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[min(100vw-2rem,320px)]">
+                <SheetHeader>
+                  <SheetTitle className="text-left font-poppins text-lg uppercase">
+                    Menu
+                  </SheetTitle>
+                </SheetHeader>
+                <form
+                  role="search"
+                  onSubmit={handleSearchSubmit}
+                  className="mt-4 flex items-center rounded-[62px] bg-[#f0f0f0] px-4 py-3"
+                >
+                  <Search className="h-5 w-5 shrink-0 text-gray-400" />
+                  <input
+                    type="search"
+                    name="q"
+                    value={searchDraft}
+                    onChange={(e) => setSearchDraft(e.target.value)}
+                    placeholder="Search for products..."
+                    autoComplete="off"
+                    className="min-w-0 flex-1 bg-transparent px-3 text-sm focus:outline-none"
+                  />
+                </form>
+                <nav className="mt-6 flex flex-col gap-1">
+                  {MOBILE_NAV_LINKS.map(({ to, label }) => (
+                    <Link
+                      key={to}
+                      to={to}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="rounded-md px-3 py-2.5 text-sm font-medium text-black transition-colors hover:bg-black/5"
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
+          {/* Logo */}
+          <Link to="/">
+            <img
+              src={Logo}
+              alt="Logo"
+              className="h-[22px] w-[140px]"
+              loading="eager"
+            />
+          </Link>
+        </div>
         <nav className="hidden sm:flex items-center gap-[24px] ml-[40px]">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -132,15 +212,7 @@ const Header = () => {
         <form
           className="hidden lg:flex items-center border-0 rounded-[62px] px-[16px] py-[12px] bg-[#f0f0f0] w-[577px] h-[48px]"
           role="search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const q = searchDraft.trim();
-            if (q) {
-              navigate(`/shop?q=${encodeURIComponent(q)}`);
-            } else {
-              navigate("/shop");
-            }
-          }}
+          onSubmit={handleSearchSubmit}
         >
           <Search className="h-[24px] w-[24px] shrink-0 text-gray-400" />
           <input
@@ -168,9 +240,15 @@ const Header = () => {
           </div>
 
           {user && !hideSignedInChrome ? (
-            <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+            <DropdownMenu
+              open={profileMenuOpen}
+              onOpenChange={setProfileMenuOpen}
+            >
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-1 focus:outline-none cursor-pointer hover:text-gray-500 transition-colors">
+                <button
+                  type="button"
+                  className="flex items-center gap-1 cursor-pointer hover:text-gray-500 transition-colors focus:outline-none"
+                >
                   {/* <CircleUser className="h-[24px] w-[24px]" /> */}
 
                   {userProfile?.avatar ? (
@@ -191,10 +269,10 @@ const Header = () => {
 
                   <ChevronUp
                     className={`h-4 w-4 text-gray-500 transition-transform duration-400 ease-out ${
-                      isOpen ? "rotate-180" : ""
+                      profileMenuOpen ? "rotate-180" : ""
                     }`}
                   />
-                </div>
+                </button>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent className="w-48">
